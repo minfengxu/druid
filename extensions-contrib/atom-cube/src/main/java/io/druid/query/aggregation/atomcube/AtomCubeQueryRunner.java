@@ -1,3 +1,22 @@
+/*
+ * Licensed to Metamarkets Group Inc. (Metamarkets) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. Metamarkets licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package io.druid.query.aggregation.atomcube;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -6,21 +25,37 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.base.Throwables;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.metamx.collections.bitmap.ImmutableBitmap;
-import com.metamx.collections.bitmap.WrappedImmutableRoaringBitmap;
 import com.metamx.common.ISE;
 import com.metamx.common.Pair;
-import com.metamx.common.guava.*;
 import com.metamx.emitter.EmittingLogger;
 import io.druid.client.CacheUtil;
 import io.druid.client.cache.Cache;
+import io.druid.collections.bitmap.ImmutableBitmap;
+import io.druid.collections.bitmap.WrappedImmutableRoaringBitmap;
 import io.druid.data.input.MapBasedRow;
-import io.druid.query.*;
+import io.druid.java.util.common.guava.BaseSequence;
+import io.druid.java.util.common.guava.Sequence;
+import io.druid.java.util.common.guava.Sequences;
+import io.druid.java.util.common.guava.Yielder;
+import io.druid.java.util.common.guava.YieldingAccumulator;
+import io.druid.query.AbstractPrioritizedCallable;
+import io.druid.query.BaseQuery;
+import io.druid.query.CacheStrategy;
+import io.druid.query.Query;
+import io.druid.query.QueryContextKeys;
+import io.druid.query.QueryInterruptedException;
+import io.druid.query.QueryRunner;
+import io.druid.query.QuerySegmentWalker;
+import io.druid.query.QueryWatcher;
+import io.druid.query.Result;
 import io.druid.query.aggregation.AggregatorFactory;
 import io.druid.query.aggregation.PostAggregator;
 import io.druid.query.groupby.GroupByQuery;
@@ -35,8 +70,17 @@ import org.roaringbitmap.RoaringBitmap;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class AtomCubeQueryRunner implements QueryRunner
 {
@@ -507,125 +551,6 @@ public class AtomCubeQueryRunner implements QueryRunner
     final List<Object> cacheResults = Lists.newLinkedList();
     cacheResults.add(cacheFn.apply(new Result(new DateTime(), resultValue)));
     CacheUtil.populate(cache, mapper, atomQ.getKey(), cacheResults);
-
-    return BaseSequence.simple(resultValue);
-  }
-
-  //  @Override
-  public Sequence run_(Query _query, Map responseContext)
-  {
-    if (!(_query instanceof AtomCubeQuery)) {
-      throw new ISE("Got a [%s] which isn't a %s", _query.getClass(), AtomCubeQuery.class);
-    }
-    AtomCubeQuery atomQ = (AtomCubeQuery) _query;
-    Map<String, Query> queries = atomQ.getQueries();
-    Iterable<Query> queryIterables = Iterables.unmodifiableIterable(Iterables.filter(
-        queries.values(),
-        Predicates.notNull()
-    ));
-    AtomCubeResultValue resultValue = null;
-
-    if (queries != null && !queries.isEmpty()) {
-      final ListeningExecutorService exec = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(queries.size()));
-
-      ListenableFuture<List<ImmutableBitmap>> futures = Futures.allAsList(
-          Iterables.transform(
-              queryIterables,
-              new Function<Query, ListenableFuture<ImmutableBitmap>>()
-              {
-
-                @Nullable
-                @Override
-                public ListenableFuture<ImmutableBitmap> apply(@Nullable Query input)
-                {
-                  if (input == null) {
-                    throw new ISE("Null query!??");
-                  }
-                  final Query query = input;
-                  int priority = BaseQuery.getContextPriority(query, 0);
-                  return exec.submit(
-                      new AbstractPrioritizedCallable<ImmutableBitmap>(priority)
-                      {
-                        @Override
-                        public ImmutableBitmap call()
-                        {
-                          long begin = System.currentTimeMillis();
-                          Yielder yielder = null;
-                          try {
-                            yielder = Query(query, new StringBuilder());
-                          }
-                          catch (IOException e) {
-                            e.printStackTrace();
-                          }
-                          log.debug("--- inner query use " + (System.currentTimeMillis() - begin) + "millis");
-                          return mm.get(query.getType()).apply(query, yielder);
-                        }
-                      }
-                  );
-                }
-              }
-          )
-      );
-      long begin = System.currentTimeMillis();
-      queryWatcher.registerQuery(atomQ, futures);
-      final Number timeout = atomQ.getContextValue(QueryContextKeys.TIMEOUT, (Number) null);
-      List<ImmutableBitmap> bitmaps;
-      try {
-        if (timeout == null) {
-          bitmaps = futures.get();
-        } else {
-          bitmaps = futures.get(timeout.longValue(), TimeUnit.MILLISECONDS);
-        }
-      }
-      catch (ExecutionException e) {
-        throw Throwables.propagate(e.getCause());
-      }
-      catch (InterruptedException e) {
-        log.warn(e, "Query interrupted, cancelling pending results, query id [%s]", atomQ.getId());
-        futures.cancel(true);
-        throw new QueryInterruptedException(e);
-      }
-      catch (TimeoutException e) {
-        log.info("Query timeout, cancelling pending results for query id [%s]", atomQ.getId());
-        futures.cancel(true);
-        throw new QueryInterruptedException(e);
-      }
-      log.debug("--- queries use " + (System.currentTimeMillis() - begin) + "millis");
-      begin = System.currentTimeMillis();
-      if (bitmaps != null) {
-        final Map<String, Object> results = new HashMap<String, Object>();
-        Iterator<String> iter1 = queries.keySet().iterator();
-        Iterator<ImmutableBitmap> iter2 = bitmaps.iterator();
-        while (iter1.hasNext() && iter2.hasNext()) {
-          results.put(iter1.next(), iter2.next());
-        }
-
-        List<PostAggregator> postaggs = atomQ.getPostAggregations();
-        if (postaggs != null) {
-          for (PostAggregator postagg : postaggs) {
-            Object o = postagg.compute(results);
-            results.put(postagg.getName(), o);
-          }
-
-          final Map<String, Object> outputResults = new HashMap();
-          for (PostAggregator postagg : postaggs) {
-            if (postagg instanceof AtomCubeSetPostAggregator) {
-              continue;
-            }
-            outputResults.put(postagg.getName(), results.get(postagg.getName()));
-          }
-          List tmp = Lists.newArrayList();
-          tmp.add(outputResults);
-          resultValue = new AtomCubeResultValue(tmp);
-        } else {
-          log.warn("AtomCube Query has not been assigned postaggregators.");
-          resultValue = new AtomCubeResultValue(null);
-        }
-      }
-      log.debug("--- postaggregators use " + (System.currentTimeMillis() - begin) + "millis");
-      Util.print(log);
-      exec.shutdown();
-    }
 
     return BaseSequence.simple(resultValue);
   }

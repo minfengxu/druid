@@ -1,12 +1,31 @@
+/*
+ * Licensed to Metamarkets Group Inc. (Metamarkets) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. Metamarkets licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package io.druid.query.aggregation.atomcube;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
-import com.metamx.collections.bitmap.ImmutableBitmap;
-import com.metamx.collections.bitmap.WrappedImmutableRoaringBitmap;
 import com.metamx.common.IAE;
 import com.metamx.common.ISE;
+import io.druid.collections.bitmap.ImmutableBitmap;
+import io.druid.collections.bitmap.WrappedImmutableRoaringBitmap;
 import io.druid.query.aggregation.PostAggregator;
 import org.roaringbitmap.IntConsumer;
 import org.roaringbitmap.IntIterator;
@@ -84,21 +103,6 @@ public class AtomCubeSetPostAggregator implements PostAggregator
       sets.remove(0);
       ImmutableBitmap _tmp = AtomCubeAggregatorFactory.BITMAP_FACTORY.union(sets);
       ImmutableBitmap tmp = AtomCubeAggregatorFactory.BITMAP_FACTORY.complement(_tmp, first_length + 1);
-//      ImmutableBitmap tmp = AtomCubeAggregatorFactory.BITMAP_FACTORY.union(
-//        Lists.transform(
-//          bitmaps,
-//          new Function<ImmutableBitmap, ImmutableBitmap>() {
-//            @Override
-//            public ImmutableBitmap apply(ImmutableBitmap bitmap) {
-//              if(!bitmap.isEmpty()) {
-//                return AtomCubeAggregatorFactory.BITMAP_FACTORY.complement(bitmap, first_length+1);
-//              } else {
-//                return bitmap;
-//              }
-//            }
-//          }
-//        )
-//      );
       return bitmaps.get(0).intersection(tmp);
     } else {
       throw new ISE("WTF?! No implementation for function[%s]", func);

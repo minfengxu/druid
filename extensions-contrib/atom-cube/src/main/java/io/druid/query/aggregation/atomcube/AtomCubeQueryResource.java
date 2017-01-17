@@ -1,3 +1,22 @@
+/*
+ * Licensed to Metamarkets Group Inc. (Metamarkets) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. Metamarkets licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package io.druid.query.aggregation.atomcube;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,14 +26,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapMaker;
 import com.google.common.io.CountingOutputStream;
 import com.google.inject.Inject;
-import com.metamx.common.guava.Sequence;
-import com.metamx.common.guava.Sequences;
-import com.metamx.common.guava.Yielder;
-import com.metamx.common.guava.YieldingAccumulator;
 import com.metamx.emitter.EmittingLogger;
 import com.metamx.emitter.service.ServiceEmitter;
 import io.druid.guice.annotations.Json;
 import io.druid.guice.annotations.Smile;
+import io.druid.java.util.common.guava.Sequence;
+import io.druid.java.util.common.guava.Sequences;
+import io.druid.java.util.common.guava.Yielder;
+import io.druid.java.util.common.guava.YieldingAccumulator;
 import io.druid.query.DruidMetrics;
 import io.druid.query.QueryRunnerFactoryConglomerate;
 import io.druid.server.QueryStats;
@@ -23,7 +42,12 @@ import io.druid.server.log.RequestLogger;
 import org.joda.time.DateTime;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -124,12 +148,12 @@ public class AtomCubeQueryResource
 
                 final long queryTime = System.currentTimeMillis() - start;
                 emitter.emit(
-                    DruidMetrics.makeQueryTimeMetric(jsonMapper, atomQ, req.getRemoteAddr())
+                    DruidMetrics.makeQueryTimeMetric(null, jsonMapper, atomQ, req.getRemoteAddr())
                                 .setDimension("success", "true")
                                 .build("query/time", queryTime)
                 );
                 emitter.emit(
-                    DruidMetrics.makeQueryTimeMetric(jsonMapper, atomQ, req.getRemoteAddr())
+                    DruidMetrics.makeQueryTimeMetric(null, jsonMapper, atomQ, req.getRemoteAddr())
                                 .build("query/bytes", os.getCount())
                 );
 
