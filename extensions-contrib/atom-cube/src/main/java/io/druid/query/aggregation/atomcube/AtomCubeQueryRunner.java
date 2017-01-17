@@ -38,10 +38,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 
-/**
- * Created by minfengxu on 2016/5/30 0030.
- */
-public class AtomCubeQueryRunner implements QueryRunner {
+public class AtomCubeQueryRunner implements QueryRunner
+{
 
   private static final EmittingLogger log = new EmittingLogger(AtomCubeQueryRunner.class);
 
@@ -56,15 +54,19 @@ public class AtomCubeQueryRunner implements QueryRunner {
   private static final Map<String, FetchBitmapFunc<Query, Yielder, ImmutableBitmap>> mm = new HashMap<>();
 
   static {
-    mm.put(Query.TOPN, new FetchBitmapFunc<Query, Yielder, ImmutableBitmap>() {
+    mm.put(Query.TOPN, new FetchBitmapFunc<Query, Yielder, ImmutableBitmap>()
+    {
       @Override
-      public ImmutableBitmap apply(Query query, Yielder yielder) {
+      public ImmutableBitmap apply(Query query, Yielder yielder)
+      {
         ImmutableBitmap ret = null;
         String metricName = getAtomCubeMetricName(query);
-        if(metricName != null && yielder != null) {
-          ret = goThroughYielder(yielder, metricName, new Fetcher<String, Object, ImmutableBitmap>() {
+        if (metricName != null && yielder != null) {
+          ret = goThroughYielder(yielder, metricName, new Fetcher<String, Object, ImmutableBitmap>()
+          {
             @Override
-            public ImmutableBitmap apply(String metricName, Object input) {
+            public ImmutableBitmap apply(String metricName, Object input)
+            {
               ImmutableBitmap ret = null;
               if (null != input && input instanceof Result) {
                 Result result = (Result) input;
@@ -75,7 +77,7 @@ public class AtomCubeQueryRunner implements QueryRunner {
                   List<DimensionAndMetricValueExtractor> values = resultValue.getValue();
                   for (DimensionAndMetricValueExtractor valueExtractor : values) {
                     ret = ret == null ? toImmutable(valueExtractor.getMetric(metricName)) :
-                      ret.union(toImmutable(valueExtractor.getMetric(metricName)));
+                          ret.union(toImmutable(valueExtractor.getMetric(metricName)));
                   }
                 }
               }
@@ -87,15 +89,19 @@ public class AtomCubeQueryRunner implements QueryRunner {
       }
     });
 
-    mm.put(Query.TIMESERIES, new FetchBitmapFunc<Query, Yielder, ImmutableBitmap>() {
+    mm.put(Query.TIMESERIES, new FetchBitmapFunc<Query, Yielder, ImmutableBitmap>()
+    {
       @Override
-      public ImmutableBitmap apply(Query query, Yielder yielder) {
+      public ImmutableBitmap apply(Query query, Yielder yielder)
+      {
         ImmutableBitmap ret = null;
         String metricName = getAtomCubeMetricName(query);
-        if(metricName != null && yielder != null) {
-          ret = goThroughYielder(yielder, metricName, new Fetcher<String, Object, ImmutableBitmap>() {
+        if (metricName != null && yielder != null) {
+          ret = goThroughYielder(yielder, metricName, new Fetcher<String, Object, ImmutableBitmap>()
+          {
             @Override
-            public ImmutableBitmap apply(String metricName, Object input) {
+            public ImmutableBitmap apply(String metricName, Object input)
+            {
               Object ret = null;
               if (null != input && input instanceof Result) {
                 Result result = (Result) input;
@@ -114,15 +120,19 @@ public class AtomCubeQueryRunner implements QueryRunner {
       }
     });
 
-    mm.put(Query.GROUP_BY, new FetchBitmapFunc<Query, Yielder, ImmutableBitmap>() {
+    mm.put(Query.GROUP_BY, new FetchBitmapFunc<Query, Yielder, ImmutableBitmap>()
+    {
       @Override
-      public ImmutableBitmap apply(Query query, Yielder yielder) {
+      public ImmutableBitmap apply(Query query, Yielder yielder)
+      {
         ImmutableBitmap ret = null;
         String metricName = getAtomCubeMetricName(query);
-        if(metricName != null && yielder != null) {
-          ret = goThroughYielder(yielder, metricName, new Fetcher<String, Object, ImmutableBitmap>() {
+        if (metricName != null && yielder != null) {
+          ret = goThroughYielder(yielder, metricName, new Fetcher<String, Object, ImmutableBitmap>()
+          {
             @Override
-            public ImmutableBitmap apply(String metricName, Object input) {
+            public ImmutableBitmap apply(String metricName, Object input)
+            {
               Object ret = null;
               if (null != input && input instanceof MapBasedRow) {
                 MapBasedRow result = (MapBasedRow) input;
@@ -140,13 +150,15 @@ public class AtomCubeQueryRunner implements QueryRunner {
   }
 
   public AtomCubeQueryRunner(
-    ServerConfig config,
-    QuerySegmentWalker texasRanger,
-    QueryWatcher queryWatcher,
-    ExecutorService exec,
-    Cache cache,
-    ObjectMapper objectMapper,
-    AtomCubeQueryQueryToolChest toolChest) {
+      ServerConfig config,
+      QuerySegmentWalker texasRanger,
+      QueryWatcher queryWatcher,
+      ExecutorService exec,
+      Cache cache,
+      ObjectMapper objectMapper,
+      AtomCubeQueryQueryToolChest toolChest
+  )
+  {
     this.config = config;
     this.texasRanger = texasRanger;
     this.queryWatcher = queryWatcher;
@@ -161,32 +173,34 @@ public class AtomCubeQueryRunner implements QueryRunner {
   boolean done = false;
 
   final Map<String, StringBuilder> queryStack = Maps.newConcurrentMap();
-//  final StringBuffer debugsb1 = new StringBuffer();
+  //  final StringBuffer debugsb1 = new StringBuffer();
   final StringBuffer debugsb2 = new StringBuffer();
-  private boolean satisfyPostAgg(Map results, PostAggregator postagg) {
+
+  private boolean satisfyPostAgg(Map results, PostAggregator postagg)
+  {
     boolean ret = false;
     List<String> fields = Lists.newArrayList();
     String field = null;
-    if(postagg instanceof AtomCubeSetPostAggregator) {
+    if (postagg instanceof AtomCubeSetPostAggregator) {
       fields = ((AtomCubeSetPostAggregator) postagg).getFields();
-    } else if(postagg instanceof AtomCubeSizePostAggregator) {
+    } else if (postagg instanceof AtomCubeSizePostAggregator) {
       field = ((AtomCubeSizePostAggregator) postagg).getField();
-    } else if(postagg instanceof AtomCubeRawPostAggregator) {
+    } else if (postagg instanceof AtomCubeRawPostAggregator) {
       field = ((AtomCubeRawPostAggregator) postagg).getField();
     }
-    if(field != null) {
-      if(results.get(field) != null) {
+    if (field != null) {
+      if (results.get(field) != null) {
         debugsb2.append("-- check postagg:").append(postagg.getName()).append(" passed\n");
         ret = true;
       }
-    } else if(!fields.isEmpty()) {
+    } else if (!fields.isEmpty()) {
       int i = 0;
-      for(String s:fields) {
-        if(results.get(s) != null) {
+      for (String s : fields) {
+        if (results.get(s) != null) {
           i++;
         }
       }
-      if(i == fields.size()) {
+      if (i == fields.size()) {
         debugsb2.append("-- check postagg:").append(postagg.getName()).append(" passed\n");
         ret = true;
       }
@@ -194,8 +208,9 @@ public class AtomCubeQueryRunner implements QueryRunner {
     return ret;
   }
 
-  private void doCompute(Map results, List<PostAggregator> postaggs) {
-    if(!postaggs.isEmpty()) {
+  private void doCompute(Map results, List<PostAggregator> postaggs)
+  {
+    if (!postaggs.isEmpty()) {
       List<PostAggregator> indexes = Lists.newArrayList();
       for (PostAggregator postagg : postaggs) {
         if (satisfyPostAgg(results, postagg)) {
@@ -206,7 +221,7 @@ public class AtomCubeQueryRunner implements QueryRunner {
         }
       }
       if (!indexes.isEmpty()) {
-        for(PostAggregator postagg : indexes) {
+        for (PostAggregator postagg : indexes) {
           postaggs.remove(postagg);
           debugsb2.append("-- postagg:").append(postagg.getName()).append(" removed\n");
         }
@@ -214,38 +229,39 @@ public class AtomCubeQueryRunner implements QueryRunner {
     }
   }
 
-  private Map<String, Object> computeSet(AtomCubeQuery atomQ) throws InterruptedException {
+  private Map<String, Object> computeSet(AtomCubeQuery atomQ) throws InterruptedException
+  {
     List<PostAggregator> postaggs = atomQ.getPostAggregations() == null ? null :
-      Lists.newCopyOnWriteArrayList(atomQ.getPostAggregations());
+                                    Lists.newCopyOnWriteArrayList(atomQ.getPostAggregations());
     final Map<String, Object> results = new HashMap<String, Object>();
     if (postaggs != null) {
 
-      while(!done || !queue.isEmpty()) {
+      while (!done || !queue.isEmpty()) {
         Pair<String, ImmutableBitmap> pair = queue.poll(100, TimeUnit.MILLISECONDS);
-        if(pair != null) {
+        if (pair != null) {
           results.put(pair.lhs, pair.rhs);
           debugsb2.append("-- put ").append(pair.lhs).append(" to results, and doCompute\n");
           doCompute(results, postaggs);
         }
       }
       doCompute(results, postaggs);
-      if(!postaggs.isEmpty()) {
+      if (!postaggs.isEmpty()) {
         log.warn("AtomCube Query's postaggregators did not compute complete.");
         log.warn("results contains:");
-        for(String key : results.keySet() ) {
-          log.warn("\t"+key);
+        for (String key : results.keySet()) {
+          log.warn("\t" + key);
         }
         log.warn("PostAggregators didn't compute:");
-        for(PostAggregator postagg:postaggs) {
-          log.warn("postagg name:"+postagg.getName());
-          if(postagg instanceof AtomCubeSetPostAggregator) {
-            for(String field : ((AtomCubeSetPostAggregator) postagg).getFields()) {
-              log.warn("\t field:"+field);
+        for (PostAggregator postagg : postaggs) {
+          log.warn("postagg name:" + postagg.getName());
+          if (postagg instanceof AtomCubeSetPostAggregator) {
+            for (String field : ((AtomCubeSetPostAggregator) postagg).getFields()) {
+              log.warn("\t field:" + field);
             }
-          } else if(postagg instanceof AtomCubeSizePostAggregator) {
-            log.warn("\t field:"+((AtomCubeSizePostAggregator) postagg).getField());
-          } else if(postagg instanceof AtomCubeRawPostAggregator) {
-            log.warn("\t field:"+((AtomCubeRawPostAggregator) postagg).getField());
+          } else if (postagg instanceof AtomCubeSizePostAggregator) {
+            log.warn("\t field:" + ((AtomCubeSizePostAggregator) postagg).getField());
+          } else if (postagg instanceof AtomCubeRawPostAggregator) {
+            log.warn("\t field:" + ((AtomCubeRawPostAggregator) postagg).getField());
           }
         }
         log.warn(debugsb2.toString());
@@ -257,10 +273,11 @@ public class AtomCubeQueryRunner implements QueryRunner {
     return results;
   }
 
-  private String getQueryName(final Map<String, Query> queries, final Query query) {
+  private String getQueryName(final Map<String, Query> queries, final Query query)
+  {
     String ret = null;
-    for(Map.Entry<String, Query> entry:queries.entrySet()) {
-      if(entry.getValue() == query) {
+    for (Map.Entry<String, Query> entry : queries.entrySet()) {
+      if (entry.getValue() == query) {
         ret = entry.getKey();
         break;
       }
@@ -268,87 +285,107 @@ public class AtomCubeQueryRunner implements QueryRunner {
     return ret;
   }
 
-  private Sequence fetchResultFromCache(final CacheStrategy strategy, final byte [] value) {
+  private Sequence fetchResultFromCache(final CacheStrategy strategy, final byte[] value)
+  {
     final Function cacheFn = strategy.pullFromCache();
     final TypeReference cacheObjectClazz = strategy.getCacheObjectClazz();
     try {
       final MappingIterator iterator = mapper.readValues(
-        mapper.getFactory().createParser(value),
-        cacheObjectClazz
+          mapper.getFactory().createParser(value),
+          cacheObjectClazz
       );
       Object o = iterator.next();
       Result<AtomCubeResultValue> result = (Result<AtomCubeResultValue>) cacheFn.apply(o);
-      if(result != null) {
+      if (result != null) {
         return BaseSequence.simple(result.getValue());
       } else {
         log.debug("cache expired!!!");
         return null;
       }
-    } catch (IOException e) {
+    }
+    catch (IOException e) {
       throw Throwables.propagate(e);
     }
   }
 
-  private ListenableFuture<List<ImmutableBitmap>> prepareFutures(final AtomCubeQuery atomQ) {
+  private ListenableFuture<List<ImmutableBitmap>> prepareFutures(final AtomCubeQuery atomQ)
+  {
     final Map<String, Query> queries = atomQ.getQueries();
     Iterable<Query> queryIterables =
-      Iterables.unmodifiableIterable(Iterables.filter(queries.values(), Predicates.notNull()));
+        Iterables.unmodifiableIterable(Iterables.filter(queries.values(), Predicates.notNull()));
     return Futures.allAsList(
-      Iterables.transform(
-        queryIterables,
-        new Function<Query, ListenableFuture<ImmutableBitmap>>() {
+        Iterables.transform(
+            queryIterables,
+            new Function<Query, ListenableFuture<ImmutableBitmap>>()
+            {
 
-          @Nullable
-          @Override
-          public ListenableFuture<ImmutableBitmap> apply(@Nullable final Query input) {
-            if (input == null) {
-              throw new ISE("Null query!??");
-            }
-            final String queryName = getQueryName(queries, input);
-            final StringBuilder debugsb = new StringBuilder();
-            debugsb.append("** add query to list, query:").append(queryName).append("\n");
-            final Query query = input;
-            int priority = BaseQuery.getContextPriority(query, 0);
-            return ((ListeningExecutorService)executorService).submit(
-              new AbstractPrioritizedCallable<ImmutableBitmap>(priority) {
-                @Override
-                public ImmutableBitmap call() {
-                  debugsb.append("** running query:").append(queryName).append("\n");
-                  long begin = System.currentTimeMillis();
-                  Yielder yielder = null;
-                  try {
-                    yielder = Query(query, debugsb);
-                  } catch (IOException e) {
-                    e.printStackTrace();
-                    log.error(e.getMessage());
-                    debugsb.append("** subquery failed:").append(e.getMessage()).append("\n");
-                  } catch (Throwable throwable) {
-                    debugsb.append("** * subquery failed:").append(throwable.getMessage()).append("\n");
-                  }
-                  debugsb.append("** query done:").append(queryName).append(" time:").append(System.currentTimeMillis()-begin).append("\n");
-                  log.debug("--- inner query use "+ (System.currentTimeMillis()-begin) + "millis");
-                  ImmutableBitmap immutableBitmap = mm.get(query.getType()).apply(query, yielder);
-                  if(immutableBitmap == null) {
-                    immutableBitmap = AtomCubeAggregatorFactory.BITMAP_FACTORY.makeEmptyImmutableBitmap();
-                  }
-                  debugsb.append("** done query:").append(queryName).append(" time:").append(System.currentTimeMillis()-begin).append("\n");
-                  queue.offer(Pair.of(queryName, immutableBitmap));
-                  queryStack.put(queryName, debugsb);
-                  if(immutableBitmap.isEmpty()) {
-                    log.warn("returned bitmap is empty:\n"+debugsb.toString());
-                  }
-                  return immutableBitmap;
+              @Nullable
+              @Override
+              public ListenableFuture<ImmutableBitmap> apply(@Nullable final Query input)
+              {
+                if (input == null) {
+                  throw new ISE("Null query!??");
                 }
+                final String queryName = getQueryName(queries, input);
+                final StringBuilder debugsb = new StringBuilder();
+                debugsb.append("** add query to list, query:").append(queryName).append("\n");
+                final Query query = input;
+                int priority = BaseQuery.getContextPriority(query, 0);
+                return ((ListeningExecutorService) executorService).submit(
+                    new AbstractPrioritizedCallable<ImmutableBitmap>(priority)
+                    {
+                      @Override
+                      public ImmutableBitmap call()
+                      {
+                        debugsb.append("** running query:").append(queryName).append("\n");
+                        long begin = System.currentTimeMillis();
+                        Yielder yielder = null;
+                        try {
+                          yielder = Query(query, debugsb);
+                        }
+                        catch (IOException e) {
+                          e.printStackTrace();
+                          log.error(e.getMessage());
+                          debugsb.append("** subquery failed:").append(e.getMessage()).append("\n");
+                        }
+                        catch (Throwable throwable) {
+                          debugsb.append("** * subquery failed:").append(throwable.getMessage()).append("\n");
+                        }
+                        debugsb.append("** query done:")
+                               .append(queryName)
+                               .append(" time:")
+                               .append(System.currentTimeMillis() - begin)
+                               .append("\n");
+                        log.debug("--- inner query use " + (System.currentTimeMillis() - begin) + "millis");
+                        ImmutableBitmap immutableBitmap = mm.get(query.getType()).apply(query, yielder);
+                        if (immutableBitmap == null) {
+                          immutableBitmap = AtomCubeAggregatorFactory.BITMAP_FACTORY.makeEmptyImmutableBitmap();
+                        }
+                        debugsb.append("** done query:")
+                               .append(queryName)
+                               .append(" time:")
+                               .append(System.currentTimeMillis() - begin)
+                               .append("\n");
+                        queue.offer(Pair.of(queryName, immutableBitmap));
+                        queryStack.put(queryName, debugsb);
+                        if (immutableBitmap.isEmpty()) {
+                          log.warn("returned bitmap is empty:\n" + debugsb.toString());
+                        }
+                        return immutableBitmap;
+                      }
+                    }
+                );
               }
-            );
-          }
-        }
-      )
+            }
+        )
     );
   }
 
-  private boolean subQuerySucceed(final ListenableFuture<List<ImmutableBitmap>> futures,
-                                  final AtomCubeQuery atomQ) {
+  private boolean subQuerySucceed(
+      final ListenableFuture<List<ImmutableBitmap>> futures,
+      final AtomCubeQuery atomQ
+  )
+  {
     boolean ret = false;
     final Number timeout = atomQ.getContextValue(QueryContextKeys.TIMEOUT, (Number) null);
     List<ImmutableBitmap> bitmaps = null;
@@ -358,18 +395,22 @@ public class AtomCubeQueryRunner implements QueryRunner {
       } else {
         bitmaps = futures.get(timeout.longValue(), TimeUnit.MILLISECONDS);
       }
-    } catch (ExecutionException e) {
+    }
+    catch (ExecutionException e) {
       throw Throwables.propagate(e.getCause());
-    } catch (InterruptedException e) {
+    }
+    catch (InterruptedException e) {
       log.warn(e, "Query interrupted, cancelling pending results, query id [%s]", atomQ.getId());
       futures.cancel(true);
       throw new QueryInterruptedException(e);
-    } catch (TimeoutException e) {
+    }
+    catch (TimeoutException e) {
       log.info("Query timeout, cancelling pending results for query id [%s]", atomQ.getId());
       futures.cancel(true);
       throw new QueryInterruptedException(e);
-    } finally {
-      if(bitmaps != null && atomQ.getQueries().size() == bitmaps.size()) {
+    }
+    finally {
+      if (bitmaps != null && atomQ.getQueries().size() == bitmaps.size()) {
         log.debug("sub queries done!");
         ret = true;
       } else {
@@ -381,16 +422,18 @@ public class AtomCubeQueryRunner implements QueryRunner {
     return ret;
   }
 
-  private void logQueryStack(){
-    for(Map.Entry<String, StringBuilder> entry:queryStack.entrySet()) {
+  private void logQueryStack()
+  {
+    for (Map.Entry<String, StringBuilder> entry : queryStack.entrySet()) {
       log.error(entry.getKey());
       log.error(entry.getValue().toString());
     }
   }
 
   @Override
-  public Sequence run(Query _query, Map responseContext) {
-    if(!(_query instanceof AtomCubeQuery)) {
+  public Sequence run(Query _query, Map responseContext)
+  {
+    if (!(_query instanceof AtomCubeQuery)) {
       throw new ISE("Got a [%s] which isn't a %s", _query.getClass(), AtomCubeQuery.class);
     }
 
@@ -398,9 +441,9 @@ public class AtomCubeQueryRunner implements QueryRunner {
 
     final CacheStrategy strategy = toolChest.getCacheStrategy(atomQ);
     final byte[] value = cache.get(atomQ.getKey());
-    if(value != null && value.length > 0) {
+    if (value != null && value.length > 0) {
       Sequence retSeq = fetchResultFromCache(strategy, value);
-      if(retSeq != null) {
+      if (retSeq != null) {
         log.info("hit the cache!!!!");
         return retSeq;
       } else {
@@ -415,31 +458,34 @@ public class AtomCubeQueryRunner implements QueryRunner {
       final ListenableFuture<List<ImmutableBitmap>> futures = prepareFutures(atomQ);
       queryWatcher.registerQuery(atomQ, futures);
 
-      executorService.submit(new Callable<Boolean>() {
-        @Override
-        public Boolean call() throws Exception {
-          boolean result = subQuerySucceed(futures, atomQ);
-          if(!result) {
-            log.warn("some queries failed, try again");
-            try {
-              Thread.sleep(100);
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-            result = subQuerySucceed(prepareFutures(atomQ), atomQ);
-            if(!result) {
-              log.error("Still fail, give up");
-            }
-          }
-          done = true;
-          return result;
-        }
-      }
+      executorService.submit(new Callable<Boolean>()
+                             {
+                               @Override
+                               public Boolean call() throws Exception
+                               {
+                                 boolean result = subQuerySucceed(futures, atomQ);
+                                 if (!result) {
+                                   log.warn("some queries failed, try again");
+                                   try {
+                                     Thread.sleep(100);
+                                   }
+                                   catch (InterruptedException e) {
+                                     e.printStackTrace();
+                                   }
+                                   result = subQuerySucceed(prepareFutures(atomQ), atomQ);
+                                   if (!result) {
+                                     log.error("Still fail, give up");
+                                   }
+                                 }
+                                 done = true;
+                                 return result;
+                               }
+                             }
       );
 
       try {
         final Map<String, Object> results = computeSet(atomQ);
-        if(!results.isEmpty()) {
+        if (!results.isEmpty()) {
           final Map<String, Object> outputResults = new HashMap();
           for (PostAggregator postagg : atomQ.getPostAggregations()) {
             if (postagg instanceof AtomCubeSetPostAggregator) {
@@ -451,7 +497,8 @@ public class AtomCubeQueryRunner implements QueryRunner {
           tmp.add(outputResults);
           resultValue = new AtomCubeResultValue(tmp);
         }
-      } catch (InterruptedException e) {
+      }
+      catch (InterruptedException e) {
         e.printStackTrace();
       }
     }
@@ -465,50 +512,59 @@ public class AtomCubeQueryRunner implements QueryRunner {
   }
 
   //  @Override
-  public Sequence run_(Query _query, Map responseContext) {
-    if(!(_query instanceof AtomCubeQuery)) {
+  public Sequence run_(Query _query, Map responseContext)
+  {
+    if (!(_query instanceof AtomCubeQuery)) {
       throw new ISE("Got a [%s] which isn't a %s", _query.getClass(), AtomCubeQuery.class);
     }
     AtomCubeQuery atomQ = (AtomCubeQuery) _query;
     Map<String, Query> queries = atomQ.getQueries();
-    Iterable<Query> queryIterables = Iterables.unmodifiableIterable(Iterables.filter(queries.values(), Predicates.notNull()));
+    Iterable<Query> queryIterables = Iterables.unmodifiableIterable(Iterables.filter(
+        queries.values(),
+        Predicates.notNull()
+    ));
     AtomCubeResultValue resultValue = null;
 
     if (queries != null && !queries.isEmpty()) {
       final ListeningExecutorService exec = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(queries.size()));
 
       ListenableFuture<List<ImmutableBitmap>> futures = Futures.allAsList(
-        Iterables.transform(
-          queryIterables,
-          new Function<Query, ListenableFuture<ImmutableBitmap>>() {
+          Iterables.transform(
+              queryIterables,
+              new Function<Query, ListenableFuture<ImmutableBitmap>>()
+              {
 
-            @Nullable
-            @Override
-            public ListenableFuture<ImmutableBitmap> apply(@Nullable Query input) {
-              if (input == null) {
-                throw new ISE("Null query!??");
-              }
-              final Query query = input;
-              int priority = BaseQuery.getContextPriority(query, 0);
-              return exec.submit(
-                new AbstractPrioritizedCallable<ImmutableBitmap>(priority) {
-                  @Override
-                  public ImmutableBitmap call() {
-                    long begin = System.currentTimeMillis();
-                    Yielder yielder = null;
-                    try {
-                      yielder = Query(query, new StringBuilder());
-                    } catch (IOException e) {
-                      e.printStackTrace();
-                    }
-                    log.debug("--- inner query use "+ (System.currentTimeMillis()-begin) + "millis");
-                    return mm.get(query.getType()).apply(query, yielder);
+                @Nullable
+                @Override
+                public ListenableFuture<ImmutableBitmap> apply(@Nullable Query input)
+                {
+                  if (input == null) {
+                    throw new ISE("Null query!??");
                   }
+                  final Query query = input;
+                  int priority = BaseQuery.getContextPriority(query, 0);
+                  return exec.submit(
+                      new AbstractPrioritizedCallable<ImmutableBitmap>(priority)
+                      {
+                        @Override
+                        public ImmutableBitmap call()
+                        {
+                          long begin = System.currentTimeMillis();
+                          Yielder yielder = null;
+                          try {
+                            yielder = Query(query, new StringBuilder());
+                          }
+                          catch (IOException e) {
+                            e.printStackTrace();
+                          }
+                          log.debug("--- inner query use " + (System.currentTimeMillis() - begin) + "millis");
+                          return mm.get(query.getType()).apply(query, yielder);
+                        }
+                      }
+                  );
                 }
-              );
-            }
-          }
-        )
+              }
+          )
       );
       long begin = System.currentTimeMillis();
       queryWatcher.registerQuery(atomQ, futures);
@@ -520,20 +576,23 @@ public class AtomCubeQueryRunner implements QueryRunner {
         } else {
           bitmaps = futures.get(timeout.longValue(), TimeUnit.MILLISECONDS);
         }
-      } catch (ExecutionException e) {
+      }
+      catch (ExecutionException e) {
         throw Throwables.propagate(e.getCause());
-      } catch (InterruptedException e) {
+      }
+      catch (InterruptedException e) {
         log.warn(e, "Query interrupted, cancelling pending results, query id [%s]", atomQ.getId());
         futures.cancel(true);
         throw new QueryInterruptedException(e);
-      } catch (TimeoutException e) {
+      }
+      catch (TimeoutException e) {
         log.info("Query timeout, cancelling pending results for query id [%s]", atomQ.getId());
         futures.cancel(true);
         throw new QueryInterruptedException(e);
       }
-      log.debug("--- queries use "+ (System.currentTimeMillis()-begin) + "millis");
+      log.debug("--- queries use " + (System.currentTimeMillis() - begin) + "millis");
       begin = System.currentTimeMillis();
-      if(bitmaps != null) {
+      if (bitmaps != null) {
         final Map<String, Object> results = new HashMap<String, Object>();
         Iterator<String> iter1 = queries.keySet().iterator();
         Iterator<ImmutableBitmap> iter2 = bitmaps.iterator();
@@ -550,7 +609,7 @@ public class AtomCubeQueryRunner implements QueryRunner {
 
           final Map<String, Object> outputResults = new HashMap();
           for (PostAggregator postagg : postaggs) {
-            if(postagg instanceof AtomCubeSetPostAggregator) {
+            if (postagg instanceof AtomCubeSetPostAggregator) {
               continue;
             }
             outputResults.put(postagg.getName(), results.get(postagg.getName()));
@@ -563,7 +622,7 @@ public class AtomCubeQueryRunner implements QueryRunner {
           resultValue = new AtomCubeResultValue(null);
         }
       }
-      log.debug("--- postaggregators use "+ (System.currentTimeMillis()-begin) + "millis");
+      log.debug("--- postaggregators use " + (System.currentTimeMillis() - begin) + "millis");
       Util.print(log);
       exec.shutdown();
     }
@@ -571,7 +630,8 @@ public class AtomCubeQueryRunner implements QueryRunner {
     return BaseSequence.simple(resultValue);
   }
 
-  private Yielder Query(Query query, StringBuilder logstack) throws IOException {
+  private Yielder Query(Query query, StringBuilder logstack) throws IOException
+  {
     String queryId = query.getId();
     if (queryId == null) {
       queryId = UUID.randomUUID().toString();
@@ -579,10 +639,10 @@ public class AtomCubeQueryRunner implements QueryRunner {
     }
     if (query.getContextValue(QueryContextKeys.TIMEOUT) == null) {
       query = query.withOverriddenContext(
-        ImmutableMap.of(
-          QueryContextKeys.TIMEOUT,
-          config.getMaxIdleTime().toStandardDuration().getMillis()
-        )
+          ImmutableMap.of(
+              QueryContextKeys.TIMEOUT,
+              config.getMaxIdleTime().toStandardDuration().getMillis()
+          )
       );
     }
 
@@ -601,23 +661,30 @@ public class AtomCubeQueryRunner implements QueryRunner {
     logstack.append("** query.yielder start \n");
     long begin = System.currentTimeMillis();
     final Yielder yielder = results.toYielder(
-      null,
-      new YieldingAccumulator() {
-        @Override
-        public Object accumulate(Object accumulated, Object in) {
-          yield();
-          return in;
+        null,
+        new YieldingAccumulator()
+        {
+          @Override
+          public Object accumulate(Object accumulated, Object in)
+          {
+            yield();
+            return in;
+          }
         }
-      }
     );
-    log.debug("--- query.yielder use "+ (System.currentTimeMillis()-begin) + "millis");
-    logstack.append("** query.yielder use "+ (System.currentTimeMillis()-begin) + "millis");
+    log.debug("--- query.yielder use " + (System.currentTimeMillis() - begin) + "millis");
+    logstack.append("** query.yielder use " + (System.currentTimeMillis() - begin) + "millis");
     return yielder;
   }
 
-  private static ImmutableBitmap goThroughYielder(Yielder yielder, String metricName, Fetcher<String, Object, ImmutableBitmap> actor) {
+  private static ImmutableBitmap goThroughYielder(
+      Yielder yielder,
+      String metricName,
+      Fetcher<String, Object, ImmutableBitmap> actor
+  )
+  {
     ImmutableBitmap ret = null;
-    while(!yielder.isDone()) {
+    while (!yielder.isDone()) {
       Object o = yielder.get();
       ImmutableBitmap bitmap = actor.apply(metricName, o);
       ret = ret == null ? bitmap : ret.union(bitmap);
@@ -625,28 +692,30 @@ public class AtomCubeQueryRunner implements QueryRunner {
     }
     try {
       yielder.close();
-    } catch (IOException e) {
+    }
+    catch (IOException e) {
       e.printStackTrace();
     }
     return ret;
   }
 
-  private static String getAtomCubeMetricName(Query query) {
+  private static String getAtomCubeMetricName(Query query)
+  {
     String metricName = null;
     List<AggregatorFactory> aggs = null;
-    if(query instanceof TopNQuery) {
+    if (query instanceof TopNQuery) {
       TopNQuery _query = (TopNQuery) query;
       aggs = _query.getAggregatorSpecs();
-    } else if(query instanceof TimeseriesQuery) {
-      TimeseriesQuery _query = (TimeseriesQuery)query;
+    } else if (query instanceof TimeseriesQuery) {
+      TimeseriesQuery _query = (TimeseriesQuery) query;
       aggs = _query.getAggregatorSpecs();
-    } else if(query instanceof GroupByQuery) {
-      GroupByQuery _query = (GroupByQuery)query;
+    } else if (query instanceof GroupByQuery) {
+      GroupByQuery _query = (GroupByQuery) query;
       aggs = _query.getAggregatorSpecs();
     }
     if (aggs != null) {
-      for(AggregatorFactory agg:aggs) {
-        if(AtomCubeDruidModule.ATOM_CUBE.equals(agg.getTypeName())) {
+      for (AggregatorFactory agg : aggs) {
+        if (AtomCubeDruidModule.ATOM_CUBE.equals(agg.getTypeName())) {
           metricName = agg.getName();
           break;
         }
@@ -656,21 +725,24 @@ public class AtomCubeQueryRunner implements QueryRunner {
   }
 
   @FunctionalInterface
-  public interface FetchBitmapFunc<Query, Yielder, ImmutableBitmap> {
+  public interface FetchBitmapFunc<Query, Yielder, ImmutableBitmap>
+  {
     public ImmutableBitmap apply(Query query, Yielder yielder);
   }
 
   @FunctionalInterface
-  public interface Fetcher<String, Object, ImmutableBitmap> {
+  public interface Fetcher<String, Object, ImmutableBitmap>
+  {
     public ImmutableBitmap apply(String metricName, Object input);
   }
 
-  private static ImmutableBitmap toImmutable(Object obj) {
+  private static ImmutableBitmap toImmutable(Object obj)
+  {
     ImmutableBitmap ret = null;
-    if(obj instanceof RoaringBitmap) {
-      RoaringBitmap bitmap = (RoaringBitmap)obj;
+    if (obj instanceof RoaringBitmap) {
+      RoaringBitmap bitmap = (RoaringBitmap) obj;
       WrappedImmutableRoaringBitmap immutableRoaringBitmap =
-        new WrappedImmutableRoaringBitmap(bitmap.toMutableRoaringBitmap());
+          new WrappedImmutableRoaringBitmap(bitmap.toMutableRoaringBitmap());
       ret = immutableRoaringBitmap;
     }
     return ret;

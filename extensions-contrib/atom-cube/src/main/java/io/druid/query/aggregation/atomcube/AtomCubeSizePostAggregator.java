@@ -10,43 +10,50 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 
-public class AtomCubeSizePostAggregator implements PostAggregator {
+public class AtomCubeSizePostAggregator implements PostAggregator
+{
   private final String name;
   private final String field;
 
   @JsonCreator
   public AtomCubeSizePostAggregator(
-    @JsonProperty("name") String name,
-    @JsonProperty("field") String field
-  ) {
+      @JsonProperty("name") String name,
+      @JsonProperty("field") String field
+  )
+  {
     this.name = name;
     this.field = field;
   }
 
   @Override
-  public Set<String> getDependentFields() {
+  public Set<String> getDependentFields()
+  {
     return null;
   }
 
   @Override
-  public Comparator<RoaringBitmap> getComparator() {
+  public Comparator<RoaringBitmap> getComparator()
+  {
     return AtomCubeAggregatorFactory.COMPARATOR;
   }
 
   @Override
-  public Object compute(final Map<String, Object> combinedAggregators) {
+  public Object compute(final Map<String, Object> combinedAggregators)
+  {
     ImmutableBitmap input = ((ImmutableBitmap) combinedAggregators.get(field));
-    return input == null? 0: input.size();
+    return input == null ? 0 : input.size();
   }
 
   @Override
   @JsonProperty
-  public String getName() {
+  public String getName()
+  {
     return name;
   }
 
   @JsonProperty
-  public String getField() {
+  public String getField()
+  {
     return field;
   }
 }

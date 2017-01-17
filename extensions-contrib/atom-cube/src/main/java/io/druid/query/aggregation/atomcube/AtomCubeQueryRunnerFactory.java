@@ -13,10 +13,8 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Created by minfengxu on 2016/5/30 0030.
- */
-public class AtomCubeQueryRunnerFactory implements QueryRunnerFactory<Result<AtomCubeResultValue>, AtomCubeQuery> {
+public class AtomCubeQueryRunnerFactory implements QueryRunnerFactory<Result<AtomCubeResultValue>, AtomCubeQuery>
+{
 
   private final AtomCubeQueryQueryToolChest toolChest;
   private final QueryWatcher queryWatcher;
@@ -26,15 +24,17 @@ public class AtomCubeQueryRunnerFactory implements QueryRunnerFactory<Result<Ato
   private Cache cache;
   @Inject
   private ObjectMapper objectMapper;
-  private final static ListeningExecutorService exec = MoreExecutors.listeningDecorator(Executors.newWorkStealingPool(1000));
+  private final static ListeningExecutorService exec = MoreExecutors.listeningDecorator(Executors.newWorkStealingPool(
+      1000));
 
   @Inject
   public AtomCubeQueryRunnerFactory(
-    AtomCubeQueryQueryToolChest toolChest,
-    QueryWatcher queryWatcher,
-    ServerConfig config,
-    @Nullable QuerySegmentWalker texasRanger
-  ) {
+      AtomCubeQueryQueryToolChest toolChest,
+      QueryWatcher queryWatcher,
+      ServerConfig config,
+      @Nullable QuerySegmentWalker texasRanger
+  )
+  {
     this.toolChest = toolChest;
     this.queryWatcher = queryWatcher;
     this.texasRanger = texasRanger;
@@ -42,17 +42,23 @@ public class AtomCubeQueryRunnerFactory implements QueryRunnerFactory<Result<Ato
   }
 
   @Override
-  public QueryRunner<Result<AtomCubeResultValue>> createRunner(Segment segment) {
+  public QueryRunner<Result<AtomCubeResultValue>> createRunner(Segment segment)
+  {
     return new AtomCubeQueryRunner(config, texasRanger, queryWatcher, exec, cache, objectMapper, toolChest);
   }
 
   @Override
-  public QueryRunner<Result<AtomCubeResultValue>> mergeRunners(ExecutorService queryExecutor, Iterable<QueryRunner<Result<AtomCubeResultValue>>> queryRunners) {
+  public QueryRunner<Result<AtomCubeResultValue>> mergeRunners(
+      ExecutorService queryExecutor,
+      Iterable<QueryRunner<Result<AtomCubeResultValue>>> queryRunners
+  )
+  {
     return new ChainedExecutionQueryRunner<Result<AtomCubeResultValue>>(queryExecutor, queryWatcher, queryRunners);
   }
 
   @Override
-  public QueryToolChest<Result<AtomCubeResultValue>, AtomCubeQuery> getToolchest() {
+  public QueryToolChest<Result<AtomCubeResultValue>, AtomCubeQuery> getToolchest()
+  {
     return toolChest;
   }
 }

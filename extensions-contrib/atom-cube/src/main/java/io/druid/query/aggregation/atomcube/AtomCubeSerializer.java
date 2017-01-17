@@ -12,25 +12,27 @@ import org.roaringbitmap.RoaringBitmap;
 
 import java.io.IOException;
 
-/**
- * Created by minfengxu on 2016/4/29.
- */
-public class AtomCubeSerializer<T extends RoaringBitmap> extends JsonSerializer<T> {
+public class AtomCubeSerializer<T extends RoaringBitmap> extends JsonSerializer<T>
+{
 
   private final BitmapSerdeFactory bitmapSerdeFactory;
 
-  public AtomCubeSerializer(BitmapSerdeFactory bitmapSerdeFactory) {
+  public AtomCubeSerializer(BitmapSerdeFactory bitmapSerdeFactory)
+  {
     this.bitmapSerdeFactory = bitmapSerdeFactory;
   }
 
   @Override
-  public void serialize(RoaringBitmap value, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+  public void serialize(RoaringBitmap value, JsonGenerator jgen, SerializerProvider provider)
+      throws IOException, JsonProcessingException
+  {
     WrappedImmutableRoaringBitmap _bitmap = new WrappedImmutableRoaringBitmap(value.toMutableRoaringBitmap());
     jgen.writeString(serialize(_bitmap, bitmapSerdeFactory));
 //    jgen.writeBinary(bitmapSerdeFactory.getObjectStrategy().toBytes(value));
   }
 
-  static String serialize(ImmutableBitmap bitmap, BitmapSerdeFactory bitmapSerdeFactory) {
+  static String serialize(ImmutableBitmap bitmap, BitmapSerdeFactory bitmapSerdeFactory)
+  {
     return BaseEncoding.base64().encode(bitmapSerdeFactory.getObjectStrategy().toBytes(bitmap));
   }
 }

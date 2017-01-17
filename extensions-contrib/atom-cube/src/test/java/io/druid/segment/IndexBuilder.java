@@ -48,7 +48,7 @@ public class IndexBuilder
   private static final int MAX_ROWS = 50_000;
 
   private IncrementalIndexSchema schema = new IncrementalIndexSchema.Builder().withMetrics(new AggregatorFactory[]{
-    new CountAggregatorFactory("count")
+      new CountAggregatorFactory("count")
   }).build();
   private IndexMerger indexMerger = TestHelper.getTestIndexMerger();
   private File tmpDir;
@@ -113,11 +113,11 @@ public class IndexBuilder
     final IncrementalIndex incrementalIndex = buildIncrementalIndex();
     try {
       return TestHelper.getTestIndexIO().loadIndex(
-        indexMerger.persist(
-          incrementalIndex,
-          new File(tmpDir, String.format("testIndex-%s", new Random().nextInt(Integer.MAX_VALUE))),
-          indexSpec
-        )
+          indexMerger.persist(
+              incrementalIndex,
+              new File(tmpDir, String.format("testIndex-%s", new Random().nextInt(Integer.MAX_VALUE))),
+              indexSpec
+          )
       );
     }
     catch (IOException e) {
@@ -134,48 +134,48 @@ public class IndexBuilder
     try {
       for (int i = 0; i < rows.size(); i += ROWS_PER_INDEX_FOR_MERGING) {
         persisted.add(
-          TestHelper.getTestIndexIO().loadIndex(
-            indexMerger.persist(
-              buildIncrementalIndexWithRows(
-                schema,
-                rows.subList(i, Math.min(rows.size(), i + ROWS_PER_INDEX_FOR_MERGING))
-              ),
-              new File(tmpDir, String.format("testIndex-%s", UUID.randomUUID().toString())),
-              indexSpec
+            TestHelper.getTestIndexIO().loadIndex(
+                indexMerger.persist(
+                    buildIncrementalIndexWithRows(
+                        schema,
+                        rows.subList(i, Math.min(rows.size(), i + ROWS_PER_INDEX_FOR_MERGING))
+                    ),
+                    new File(tmpDir, String.format("testIndex-%s", UUID.randomUUID().toString())),
+                    indexSpec
+                )
             )
-          )
         );
       }
       final QueryableIndex merged = TestHelper.getTestIndexIO().loadIndex(
-        indexMerger.merge(
-          Lists.transform(
-            persisted,
-            new Function<QueryableIndex, IndexableAdapter>()
-            {
-              @Override
-              public IndexableAdapter apply(QueryableIndex input)
-              {
-                return new QueryableIndexIndexableAdapter(input);
-              }
-            }
-          ),
-          Iterables.toArray(
-            Iterables.transform(
-              Arrays.asList(schema.getMetrics()),
-              new Function<AggregatorFactory, AggregatorFactory>()
-              {
-                @Override
-                public AggregatorFactory apply(AggregatorFactory input)
-                {
-                  return input.getCombiningFactory();
-                }
-              }
-            ),
-            AggregatorFactory.class
-          ),
-          new File(tmpDir, String.format("testIndex-%s", UUID.randomUUID())),
-          indexSpec
-        )
+          indexMerger.merge(
+              Lists.transform(
+                  persisted,
+                  new Function<QueryableIndex, IndexableAdapter>()
+                  {
+                    @Override
+                    public IndexableAdapter apply(QueryableIndex input)
+                    {
+                      return new QueryableIndexIndexableAdapter(input);
+                    }
+                  }
+              ),
+              Iterables.toArray(
+                  Iterables.transform(
+                      Arrays.asList(schema.getMetrics()),
+                      new Function<AggregatorFactory, AggregatorFactory>()
+                      {
+                        @Override
+                        public AggregatorFactory apply(AggregatorFactory input)
+                        {
+                          return input.getCombiningFactory();
+                        }
+                      }
+                  ),
+                  AggregatorFactory.class
+              ),
+              new File(tmpDir, String.format("testIndex-%s", UUID.randomUUID())),
+              indexSpec
+          )
       );
       for (QueryableIndex index : persisted) {
         index.close();
@@ -188,15 +188,15 @@ public class IndexBuilder
   }
 
   private static IncrementalIndex buildIncrementalIndexWithRows(
-    IncrementalIndexSchema schema,
-    Iterable<InputRow> rows
+      IncrementalIndexSchema schema,
+      Iterable<InputRow> rows
   )
   {
     Preconditions.checkNotNull(schema, "schema");
     final IncrementalIndex incrementalIndex = new OnheapIncrementalIndex(
-      schema,
-      true,
-      MAX_ROWS
+        schema,
+        true,
+        MAX_ROWS
     );
     for (InputRow row : rows) {
       try {

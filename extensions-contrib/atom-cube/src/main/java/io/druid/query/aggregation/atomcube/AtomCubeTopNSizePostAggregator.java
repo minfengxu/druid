@@ -9,39 +9,44 @@ import org.roaringbitmap.RoaringBitmap;
 
 import java.util.*;
 
-public class AtomCubeTopNSizePostAggregator implements PostAggregator {
+public class AtomCubeTopNSizePostAggregator implements PostAggregator
+{
   private final String name;
   private final List<String> fields;
   private final Integer topN;
 
   @JsonCreator
   public AtomCubeTopNSizePostAggregator(
-    @JsonProperty("name") String name,
-    @JsonProperty("fields") List<String> fields,
-    @JsonProperty("topn") Integer topn
-  ) {
+      @JsonProperty("name") String name,
+      @JsonProperty("fields") List<String> fields,
+      @JsonProperty("topn") Integer topn
+  )
+  {
     this.name = name;
     this.fields = fields;
     this.topN = topn > 0 ? topn : 0;
   }
 
   @Override
-  public Set<String> getDependentFields() {
+  public Set<String> getDependentFields()
+  {
     return null;
   }
 
   @Override
-  public Comparator<RoaringBitmap> getComparator() {
+  public Comparator<RoaringBitmap> getComparator()
+  {
     return AtomCubeAggregatorFactory.COMPARATOR;
   }
 
   @Override
-  public Object compute(final Map<String, Object> cardinalities) {
+  public Object compute(final Map<String, Object> cardinalities)
+  {
     List<Integer> cardinalityList = Lists.newArrayList();
-    for(String field : fields) {
+    for (String field : fields) {
       cardinalityList.add((Integer) cardinalities.get(field));
     }
-    if(cardinalityList.size() > 1) {
+    if (cardinalityList.size() > 1) {
       Collections.sort(cardinalityList, Ordering.natural());
     }
     int length = cardinalityList.size() > topN ? topN : cardinalityList.size();
@@ -50,12 +55,14 @@ public class AtomCubeTopNSizePostAggregator implements PostAggregator {
 
   @Override
   @JsonProperty
-  public String getName() {
+  public String getName()
+  {
     return name;
   }
 
   @JsonProperty
-  public List<String> getFields() {
+  public List<String> getFields()
+  {
     return fields;
   }
 }

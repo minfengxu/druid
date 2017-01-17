@@ -16,35 +16,42 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by minfengxu on 2016/5/30 0030.
- */
-public class AtomCubeQueryQueryToolChest extends QueryToolChest<Result<AtomCubeResultValue>, AtomCubeQuery> {
+public class AtomCubeQueryQueryToolChest extends QueryToolChest<Result<AtomCubeResultValue>, AtomCubeQuery>
+{
   private static final TypeReference<Result<AtomCubeResultValue>> TYPE_REFERENCE =
-    new TypeReference<Result<AtomCubeResultValue>>()  {
-    };
-  private static final TypeReference<Object> OBJECT_TYPE_REFERENCE = new TypeReference<Object>()  {
+      new TypeReference<Result<AtomCubeResultValue>>()
+      {
+      };
+  private static final TypeReference<Object> OBJECT_TYPE_REFERENCE = new TypeReference<Object>()
+  {
   };
 
   public static final long CACHE_EXPIRE = 60000;
 
   @Override
-  public QueryRunner mergeResults(QueryRunner runner) {
+  public QueryRunner mergeResults(QueryRunner runner)
+  {
     return null;
   }
 
   @Override
-  public ServiceMetricEvent.Builder makeMetricBuilder(AtomCubeQuery query) {
+  public ServiceMetricEvent.Builder makeMetricBuilder(AtomCubeQuery query)
+  {
     return null;
   }
 
   @Override
-  public Function<Result<AtomCubeResultValue>, Result<AtomCubeResultValue>> makePreComputeManipulatorFn(AtomCubeQuery query, MetricManipulationFn fn) {
+  public Function<Result<AtomCubeResultValue>, Result<AtomCubeResultValue>> makePreComputeManipulatorFn(
+      AtomCubeQuery query,
+      MetricManipulationFn fn
+  )
+  {
     return null;
   }
 
   @Override
-  public TypeReference getResultTypeReference() {
+  public TypeReference getResultTypeReference()
+  {
     return TYPE_REFERENCE;
   }
 
@@ -56,7 +63,8 @@ public class AtomCubeQueryQueryToolChest extends QueryToolChest<Result<AtomCubeR
       private static final byte CACHE_STRATEGY_VERSION = 0x1;
 
       @Override
-      public byte[] computeCacheKey(AtomCubeQuery query) {
+      public byte[] computeCacheKey(AtomCubeQuery query)
+      {
         return null;
       }
 
@@ -72,7 +80,8 @@ public class AtomCubeQueryQueryToolChest extends QueryToolChest<Result<AtomCubeR
         return new Function<Result<AtomCubeResultValue>, Object>()
         {
           @Override
-          public Object apply(Result<AtomCubeResultValue> input) {
+          public Object apply(Result<AtomCubeResultValue> input)
+          {
             List<DimensionAndMetricValueExtractor> results = Lists.newArrayList(input.getValue());
             final List<Object> retVal = Lists.newArrayList();
             retVal.add(input.getTimestamp().getMillis());
@@ -87,7 +96,8 @@ public class AtomCubeQueryQueryToolChest extends QueryToolChest<Result<AtomCubeR
       @Override
       public Function<Object, Result<AtomCubeResultValue>> pullFromCache()
       {
-        return new Function<Object, Result<AtomCubeResultValue>>() {
+        return new Function<Object, Result<AtomCubeResultValue>>()
+        {
           @Override
           public Result<AtomCubeResultValue> apply(Object input)
           {
@@ -98,7 +108,7 @@ public class AtomCubeQueryQueryToolChest extends QueryToolChest<Result<AtomCubeR
 
             DateTime timestamp = new DateTime(((Number) inputIter.next()).longValue());
             DateTime current = new DateTime();
-            if( (current.getMillis() - timestamp.getMillis()) > CACHE_EXPIRE ) {
+            if ((current.getMillis() - timestamp.getMillis()) > CACHE_EXPIRE) {
               return null;
             }
             while (inputIter.hasNext()) {

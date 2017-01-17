@@ -17,33 +17,33 @@ import org.roaringbitmap.RoaringBitmap;
 
 import java.util.List;
 
-/**
- * Created by minfengxu on 2016/4/22.
- */
-public class AtomCubeDruidModule implements DruidModule {
+public class AtomCubeDruidModule implements DruidModule
+{
   private static final EmittingLogger log = new EmittingLogger(AtomCubeDruidModule.class);
 
   public static final String ATOM_CUBE = "atomCube";
 
   @Override
-  public List<? extends Module> getJacksonModules() {
+  public List<? extends Module> getJacksonModules()
+  {
     return ImmutableList.of(
-      new SimpleModule().registerSubtypes(
-        new NamedType(io.druid.query.aggregation.atomcube.AtomCubeAggregatorFactory.class, ATOM_CUBE),
-        new NamedType(AtomCubeSetPostAggregator.class, "atomCubeSet"),
-        new NamedType(AtomCubeSizePostAggregator.class, "atomCubeSize"),
-        new NamedType(AtomCubeRawPostAggregator.class, "atomCubeRaw"),
-        new NamedType(AtomCubeTopNSizePostAggregator.class, "atomCubeSizeTopN"),
-        new NamedType(AtomCubeQuery.class, "atomCube")
-      ).addSerializer(//todo should set with roaring or concise according the configure
-        RoaringBitmap.class,
-        new AtomCubeSerializer<RoaringBitmap>(new RoaringBitmapSerdeFactory())
-      )
+        new SimpleModule().registerSubtypes(
+            new NamedType(io.druid.query.aggregation.atomcube.AtomCubeAggregatorFactory.class, ATOM_CUBE),
+            new NamedType(AtomCubeSetPostAggregator.class, "atomCubeSet"),
+            new NamedType(AtomCubeSizePostAggregator.class, "atomCubeSize"),
+            new NamedType(AtomCubeRawPostAggregator.class, "atomCubeRaw"),
+            new NamedType(AtomCubeTopNSizePostAggregator.class, "atomCubeSizeTopN"),
+            new NamedType(AtomCubeQuery.class, "atomCube")
+        ).addSerializer(//todo should set with roaring or concise according the configure
+                        RoaringBitmap.class,
+                        new AtomCubeSerializer<RoaringBitmap>(new RoaringBitmapSerdeFactory())
+        )
     );
   }
 
   @Override
-  public void configure(Binder binder) {
+  public void configure(Binder binder)
+  {
     if (ComplexMetrics.getSerdeForType(ATOM_CUBE) == null) {
       ComplexMetrics.registerSerde(ATOM_CUBE, new AtomCubeComplexMetricSerde());
     }
@@ -51,11 +51,11 @@ public class AtomCubeDruidModule implements DruidModule {
       binder.bind(QueryWatcher.class).to(QueryManager.class).in(LazySingleton.class);
       binder.bind(QueryManager.class).in(LazySingleton.class);
       DruidBinders.queryToolChestBinder(binder)
-        .addBinding(AtomCubeQuery.class).to(AtomCubeQueryQueryToolChest.class);
+                  .addBinding(AtomCubeQuery.class).to(AtomCubeQueryQueryToolChest.class);
       binder.bind(AtomCubeQueryQueryToolChest.class).in(LazySingleton.class);
 
       DruidBinders.queryRunnerFactoryBinder(binder)
-        .addBinding(AtomCubeQuery.class).to(AtomCubeQueryRunnerFactory.class);
+                  .addBinding(AtomCubeQuery.class).to(AtomCubeQueryRunnerFactory.class);
       binder.bind(AtomCubeQueryRunnerFactory.class).in(LazySingleton.class);
 
       JsonConfigProvider.bind(binder, "druid.broker.cache", CacheConfig.class);

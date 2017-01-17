@@ -47,11 +47,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by minfengxu on 2016/5/17.
- */
 @RunWith(Parameterized.class)
-public class AtomCubeAggregatorQueryTest {
+public class AtomCubeAggregatorQueryTest
+{
   private static final String BITMAP_TYPE = "roaring";
 
   private static final String D_USER_NAME = "user_name";
@@ -71,55 +69,57 @@ public class AtomCubeAggregatorQueryTest {
   private Closeable closeable;
 
   public AtomCubeAggregatorQueryTest(
-    String testName,
-    IndexBuilder indexBuilder,
-    Function<IndexBuilder, Pair<Segment, Closeable>> finisher
-  ) {
+      String testName,
+      IndexBuilder indexBuilder,
+      Function<IndexBuilder, Pair<Segment, Closeable>> finisher
+  )
+  {
     this.indexBuilder = indexBuilder;
     this.finisher = finisher;
   }
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() throws Exception
+  {
     AtomCubeDruidModule module = new AtomCubeDruidModule();
     module.configure(null);
 
     long timestamp = TIME.getMillis();
 
     indexBuilder
-      .tmpDir(temporaryFolder.newFolder())
-      .schema(
-        new IncrementalIndexSchema.Builder()
-          .withDimensionsSpec(
-            new DimensionsSpec(
-              Lists.asList(D_USER_NAME, D_CITY_NAME, new String[0]),
-              null,
-              null
-            )
-          )
-          .withMetrics(
-            new AggregatorFactory[]{
-              new CountAggregatorFactory("count"),
-              new AtomCubeAggregatorFactory("atom_cube_user_id", M_USER_ID, BITMAP_TYPE)
-            }
-          )
-          .build()
-      ).add(
-      new MapBasedInputRow(
-        timestamp,
-        Lists.newArrayList(D_USER_NAME, D_CITY_NAME, M_USER_ID),
-        ImmutableMap.<String, Object>of(D_USER_NAME, "张三", D_CITY_NAME, "BeiJing", M_USER_ID, "281")
-      ),
-      new MapBasedInputRow(
-        timestamp,
-        Lists.newArrayList(D_USER_NAME, D_CITY_NAME, M_USER_ID),
-        ImmutableMap.<String, Object>of(D_USER_NAME, "李四", D_CITY_NAME, "BeiJing", M_USER_ID, "792")
-      ),
-      new MapBasedInputRow(
-        timestamp,
-        Lists.newArrayList(D_USER_NAME, D_CITY_NAME, M_USER_ID),
-        ImmutableMap.<String, Object>of(D_USER_NAME, "王五", D_CITY_NAME, "ShangHai", M_USER_ID, "863")
-      )
+        .tmpDir(temporaryFolder.newFolder())
+        .schema(
+            new IncrementalIndexSchema.Builder()
+                .withDimensionsSpec(
+                    new DimensionsSpec(
+                        Lists.asList(D_USER_NAME, D_CITY_NAME, new String[0]),
+                        null,
+                        null
+                    )
+                )
+                .withMetrics(
+                    new AggregatorFactory[]{
+                        new CountAggregatorFactory("count"),
+                        new AtomCubeAggregatorFactory("atom_cube_user_id", M_USER_ID, BITMAP_TYPE)
+                    }
+                )
+                .build()
+        ).add(
+        new MapBasedInputRow(
+            timestamp,
+            Lists.newArrayList(D_USER_NAME, D_CITY_NAME, M_USER_ID),
+            ImmutableMap.<String, Object>of(D_USER_NAME, "张三", D_CITY_NAME, "BeiJing", M_USER_ID, "281")
+        ),
+        new MapBasedInputRow(
+            timestamp,
+            Lists.newArrayList(D_USER_NAME, D_CITY_NAME, M_USER_ID),
+            ImmutableMap.<String, Object>of(D_USER_NAME, "李四", D_CITY_NAME, "BeiJing", M_USER_ID, "792")
+        ),
+        new MapBasedInputRow(
+            timestamp,
+            Lists.newArrayList(D_USER_NAME, D_CITY_NAME, M_USER_ID),
+            ImmutableMap.<String, Object>of(D_USER_NAME, "王五", D_CITY_NAME, "ShangHai", M_USER_ID, "863")
+        )
     );
 
     final Pair<Segment, Closeable> pair = finisher.apply(indexBuilder);
@@ -128,82 +128,97 @@ public class AtomCubeAggregatorQueryTest {
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() throws Exception
+  {
     closeable.close();
   }
 
   @Parameterized.Parameters(name = "{0}")
-  public static Collection<Object[]> constructorFeeder() throws IOException {
+  public static Collection<Object[]> constructorFeeder() throws IOException
+  {
     return makeConstructors();
   }
 
-  public static Collection<Object[]> makeConstructors() {
+  public static Collection<Object[]> makeConstructors()
+  {
     // TODO(gianm): Some kind of helper to reduce code duplication with BaseFilterTest
 
     final List<Object[]> constructors = Lists.newArrayList();
 
     final Map<String, IndexMerger> indexMergers = ImmutableMap.<String, IndexMerger>of(
 //      "IndexMerger", TestHelper.getTestIndexMerger(),
-      "IndexMergerV9", TestHelper.getTestIndexMergerV9()
+        "IndexMergerV9", TestHelper.getTestIndexMergerV9()
     );
 
     final Map<String, Function<IndexBuilder, Pair<Segment, Closeable>>> finishers = ImmutableMap.of(
-      "incremental", new Function<IndexBuilder, Pair<Segment, Closeable>>() {
-        @Override
-        public Pair<Segment, Closeable> apply(IndexBuilder input) {
-          final IncrementalIndex index = input.buildIncrementalIndex();
-          return Pair.<Segment, Closeable>of(
-            new IncrementalIndexSegment(index, "atom_dummy"),
-            new Closeable() {
-              @Override
-              public void close() throws IOException {
-                index.close();
-              }
-            }
-          );
+        "incremental", new Function<IndexBuilder, Pair<Segment, Closeable>>()
+        {
+          @Override
+          public Pair<Segment, Closeable> apply(IndexBuilder input)
+          {
+            final IncrementalIndex index = input.buildIncrementalIndex();
+            return Pair.<Segment, Closeable>of(
+                new IncrementalIndexSegment(index, "atom_dummy"),
+                new Closeable()
+                {
+                  @Override
+                  public void close() throws IOException
+                  {
+                    index.close();
+                  }
+                }
+            );
+          }
+        },
+        "mmapped", new Function<IndexBuilder, Pair<Segment, Closeable>>()
+        {
+          @Override
+          public Pair<Segment, Closeable> apply(IndexBuilder input)
+          {
+            final QueryableIndex index = input.buildMMappedIndex();
+            return Pair.<Segment, Closeable>of(
+                new QueryableIndexSegment("atom_dummy", index),
+                new Closeable()
+                {
+                  @Override
+                  public void close() throws IOException
+                  {
+                    index.close();
+                  }
+                }
+            );
+          }
+        },
+        "mmappedMerged", new Function<IndexBuilder, Pair<Segment, Closeable>>()
+        {
+          @Override
+          public Pair<Segment, Closeable> apply(IndexBuilder input)
+          {
+            final QueryableIndex index = input.buildMMappedMergedIndex();
+            return Pair.<Segment, Closeable>of(
+                new QueryableIndexSegment("atom_dummy", index),
+                new Closeable()
+                {
+                  @Override
+                  public void close() throws IOException
+                  {
+                    index.close();
+                  }
+                }
+            );
+          }
         }
-      },
-      "mmapped", new Function<IndexBuilder, Pair<Segment, Closeable>>() {
-        @Override
-        public Pair<Segment, Closeable> apply(IndexBuilder input) {
-          final QueryableIndex index = input.buildMMappedIndex();
-          return Pair.<Segment, Closeable>of(
-            new QueryableIndexSegment("atom_dummy", index),
-            new Closeable() {
-              @Override
-              public void close() throws IOException {
-                index.close();
-              }
-            }
-          );
-        }
-      },
-      "mmappedMerged", new Function<IndexBuilder, Pair<Segment, Closeable>>() {
-        @Override
-        public Pair<Segment, Closeable> apply(IndexBuilder input) {
-          final QueryableIndex index = input.buildMMappedMergedIndex();
-          return Pair.<Segment, Closeable>of(
-            new QueryableIndexSegment("atom_dummy", index),
-            new Closeable() {
-              @Override
-              public void close() throws IOException {
-                index.close();
-              }
-            }
-          );
-        }
-      }
     );
 
     for (Map.Entry<String, IndexMerger> indexMergerEntry : indexMergers.entrySet()) {
       for (Map.Entry<String, Function<IndexBuilder, Pair<Segment, Closeable>>> finisherEntry : finishers.entrySet()) {
         final String testName = String.format(
-          "indexMerger[%s], finisher[%s]",
-          indexMergerEntry.getKey(),
-          finisherEntry.getKey()
+            "indexMerger[%s], finisher[%s]",
+            indexMergerEntry.getKey(),
+            finisherEntry.getKey()
         );
         final IndexBuilder indexBuilder = IndexBuilder.create()
-          .indexMerger(indexMergerEntry.getValue());
+                                                      .indexMerger(indexMergerEntry.getValue());
 
         constructors.add(new Object[]{testName, indexBuilder, finisherEntry.getValue()});
         break;//xmf added to avoid run mmapped and mmappedMerged testcases due to delete template file failed in windows
@@ -215,27 +230,28 @@ public class AtomCubeAggregatorQueryTest {
   }
 
   @Test
-  public void testTimeseries() throws Exception {
+  public void testTimeseries() throws Exception
+  {
     QueryRunnerFactory factory = new TimeseriesQueryRunnerFactory(
-      new TimeseriesQueryQueryToolChest(QueryRunnerTestHelper.NoopIntervalChunkingQueryRunnerDecorator()),
-      new TimeseriesQueryEngine(),
-      QueryRunnerTestHelper.NOOP_QUERYWATCHER
+        new TimeseriesQueryQueryToolChest(QueryRunnerTestHelper.NoopIntervalChunkingQueryRunnerDecorator()),
+        new TimeseriesQueryEngine(),
+        QueryRunnerTestHelper.NOOP_QUERYWATCHER
     );
 
     TimeseriesQuery query = Druids.newTimeseriesQueryBuilder()
-      .dataSource(QueryRunnerTestHelper.dataSource)
-      .granularity(QueryRunnerTestHelper.allGran)
-      .intervals(QueryRunnerTestHelper.fullOnInterval)
-      .aggregators(
-        Lists.newArrayList(
+                                  .dataSource(QueryRunnerTestHelper.dataSource)
+                                  .granularity(QueryRunnerTestHelper.allGran)
+                                  .intervals(QueryRunnerTestHelper.fullOnInterval)
+                                  .aggregators(
+                                      Lists.newArrayList(
 //          QueryRunnerTestHelper.rowsCount,
-          new LongSumAggregatorFactory("count", "count"),
+                                          new LongSumAggregatorFactory("count", "count"),
 //          new AtomCubeAggregatorFactory("UV", VISITOR_ID, BITMAP_TYPE),
 //          new AtomCubeAggregatorFactory("UV2", VISITOR_AtomCube, BITMAP_TYPE),
 //          new AtomCubeAggregatorFactory("UC", CLIENT_AtomCube, BITMAP_TYPE)
-          new AtomCubeAggregatorFactory("user_id", M_USER_ID, BITMAP_TYPE)
-        )
-      )
+                                          new AtomCubeAggregatorFactory("user_id", M_USER_ID, BITMAP_TYPE)
+                                      )
+                                  )
 //      .postAggregators(
 //        ImmutableList.<PostAggregator>of(
 //          new AtomCubeSizePostAggregator(
@@ -261,106 +277,110 @@ public class AtomCubeAggregatorQueryTest {
 //          )
 //        )
 //      )
-      .build();
+                                  .build();
 
     Iterable<Result<TimeseriesResultValue>> results = Sequences.toList(
-      new FinalizeResultsQueryRunner(
-        factory.createRunner(segment),
-        factory.getToolchest()
-      ).run(query, Maps.newHashMap()),
-      Lists.<Result<TimeseriesResultValue>>newLinkedList()
+        new FinalizeResultsQueryRunner(
+            factory.createRunner(segment),
+            factory.getToolchest()
+        ).run(query, Maps.newHashMap()),
+        Lists.<Result<TimeseriesResultValue>>newLinkedList()
     );
 
     List<Result<TimeseriesResultValue>> expectedResults = Arrays.asList(
-      new Result<>(
-        TIME,
-        new TimeseriesResultValue(
-          ImmutableMap.<String, Object>builder()
-            .put("UV", 2)
-            .put("UV2", 2)
-            .put("UC", 3)
-            .put("rows", 3L)
-            .put("count", 3L)
-            .put("UV-intersect", 2)
-            .put("UV-list", ImmutableList.of(0, 2))
-            .put("UV-roaringBase64", "OjAAAAEAAAAAAAEAEAAAAAAAAgA=")
-            .build()
+        new Result<>(
+            TIME,
+            new TimeseriesResultValue(
+                ImmutableMap.<String, Object>builder()
+                    .put("UV", 2)
+                    .put("UV2", 2)
+                    .put("UC", 3)
+                    .put("rows", 3L)
+                    .put("count", 3L)
+                    .put("UV-intersect", 2)
+                    .put("UV-list", ImmutableList.of(0, 2))
+                    .put("UV-roaringBase64", "OjAAAAEAAAAAAAEAEAAAAAAAAgA=")
+                    .build()
+            )
         )
-      )
     );
     TestHelper.assertExpectedResults(expectedResults, results);
   }
 
   @Test
-  public void testTopN() throws Exception {
+  public void testTopN() throws Exception
+  {
     QueryRunnerFactory factory = new TopNQueryRunnerFactory(
-      TestQueryRunners.getPool(),
-      new TopNQueryQueryToolChest(
-        new TopNQueryConfig(),
-        QueryRunnerTestHelper.NoopIntervalChunkingQueryRunnerDecorator()
-      ),
-      QueryRunnerTestHelper.NOOP_QUERYWATCHER
+        TestQueryRunners.getPool(),
+        new TopNQueryQueryToolChest(
+            new TopNQueryConfig(),
+            QueryRunnerTestHelper.NoopIntervalChunkingQueryRunnerDecorator()
+        ),
+        QueryRunnerTestHelper.NOOP_QUERYWATCHER
     );
 
     TopNQuery query = new TopNQueryBuilder()
-      .dataSource(QueryRunnerTestHelper.dataSource)
-      .granularity(QueryRunnerTestHelper.allGran)
-      .intervals(QueryRunnerTestHelper.fullOnInterval)
-      .dimension(D_USER_NAME)
-      .metric(M_USER_ID)
-      .threshold(5)
-      .aggregators(
-        Lists.newArrayList(
-          new LongSumAggregatorFactory("count", "count"),
-          new AtomCubeAggregatorFactory("user_id", M_USER_ID, BITMAP_TYPE)
+        .dataSource(QueryRunnerTestHelper.dataSource)
+        .granularity(QueryRunnerTestHelper.allGran)
+        .intervals(QueryRunnerTestHelper.fullOnInterval)
+        .dimension(D_USER_NAME)
+        .metric(M_USER_ID)
+        .threshold(5)
+        .aggregators(
+            Lists.newArrayList(
+                new LongSumAggregatorFactory("count", "count"),
+                new AtomCubeAggregatorFactory("user_id", M_USER_ID, BITMAP_TYPE)
+            )
         )
-      )
-      .build();
+        .build();
 
     Iterable<Result<TopNResultValue>> results = Sequences.toList(
-      new FinalizeResultsQueryRunner(
-        factory.createRunner(segment),
-        factory.getToolchest()
-      ).run(query, Maps.newHashMap()),
-      Lists.newArrayList()
+        new FinalizeResultsQueryRunner(
+            factory.createRunner(segment),
+            factory.getToolchest()
+        ).run(query, Maps.newHashMap()),
+        Lists.newArrayList()
     );
 
     List<Result<TopNResultValue>> expectedResults = Arrays.asList(
-      new Result<>(
-        TIME,
-        new TopNResultValue(
-          ImmutableList.of(
-            ImmutableMap.<String, Object>of(
-              D_USER_NAME, "张三",
-              M_USER_ID, 1,
-              "count", 1L
-            ),
-            ImmutableMap.<String, Object>of(
-              D_USER_NAME, "李四",
-              M_USER_ID, 1,
-              "count", 1L
-            ),
-            ImmutableMap.<String, Object>of(
-              D_USER_NAME, "王五",
-              M_USER_ID, 1,
-              "count", 1L
+        new Result<>(
+            TIME,
+            new TopNResultValue(
+                ImmutableList.of(
+                    ImmutableMap.<String, Object>of(
+                        D_USER_NAME, "张三",
+                        M_USER_ID, 1,
+                        "count", 1L
+                    ),
+                    ImmutableMap.<String, Object>of(
+                        D_USER_NAME, "李四",
+                        M_USER_ID, 1,
+                        "count", 1L
+                    ),
+                    ImmutableMap.<String, Object>of(
+                        D_USER_NAME, "王五",
+                        M_USER_ID, 1,
+                        "count", 1L
+                    )
+                )
             )
-          )
         )
-      )
     );
     TestHelper.assertExpectedResults(expectedResults, results);
   }
 
   //@Test
-  public void testGroupBy() throws Exception {
+  public void testGroupBy() throws Exception
+  {
     final StupidPool<ByteBuffer> pool = new StupidPool<>(
-      new Supplier<ByteBuffer>() {
-        @Override
-        public ByteBuffer get() {
-          return ByteBuffer.allocate(1024 * 1024);
+        new Supplier<ByteBuffer>()
+        {
+          @Override
+          public ByteBuffer get()
+          {
+            return ByteBuffer.allocate(1024 * 1024);
+          }
         }
-      }
     );
 
     final GroupByQueryConfig config = new GroupByQueryConfig();
@@ -370,85 +390,85 @@ public class AtomCubeAggregatorQueryTest {
     final GroupByQueryEngine engine = new GroupByQueryEngine(configSupplier, pool);
 
     final GroupByQueryRunnerFactory factory = new GroupByQueryRunnerFactory(
-      engine,
-      QueryRunnerTestHelper.NOOP_QUERYWATCHER,
-      configSupplier,
-      new GroupByQueryQueryToolChest(
-        configSupplier, new DefaultObjectMapper(), engine, TestQueryRunners.pool,
-        QueryRunnerTestHelper.NoopIntervalChunkingQueryRunnerDecorator()
-      ),
-      TestQueryRunners.pool
+        engine,
+        QueryRunnerTestHelper.NOOP_QUERYWATCHER,
+        configSupplier,
+        new GroupByQueryQueryToolChest(
+            configSupplier, new DefaultObjectMapper(), engine, TestQueryRunners.pool,
+            QueryRunnerTestHelper.NoopIntervalChunkingQueryRunnerDecorator()
+        ),
+        TestQueryRunners.pool
     );
 
     GroupByQuery query = GroupByQuery.builder()
-      .setDataSource(QueryRunnerTestHelper.dataSource)
-      .setGranularity(QueryRunnerTestHelper.allGran)
-      .setInterval(QueryRunnerTestHelper.fullOnInterval)
-      .setDimensions(
-        ImmutableList.<DimensionSpec>of(
-          new DefaultDimensionSpec(
-            M_USER_ID,
-            M_USER_ID
-          )
-        )
-      )
-      .setLimitSpec(
-        new DefaultLimitSpec(
-          ImmutableList.of(
-            new OrderByColumnSpec(
-              M_USER_ID,
-              OrderByColumnSpec.Direction.DESCENDING//,
+                                     .setDataSource(QueryRunnerTestHelper.dataSource)
+                                     .setGranularity(QueryRunnerTestHelper.allGran)
+                                     .setInterval(QueryRunnerTestHelper.fullOnInterval)
+                                     .setDimensions(
+                                         ImmutableList.<DimensionSpec>of(
+                                             new DefaultDimensionSpec(
+                                                 M_USER_ID,
+                                                 M_USER_ID
+                                             )
+                                         )
+                                     )
+                                     .setLimitSpec(
+                                         new DefaultLimitSpec(
+                                             ImmutableList.of(
+                                                 new OrderByColumnSpec(
+                                                     M_USER_ID,
+                                                     OrderByColumnSpec.Direction.DESCENDING//,
 //              null
-            )
-          ),
-          Integer.MAX_VALUE
-        )
-      )
-      .setAggregatorSpecs(
-        Lists.newArrayList(
-          new LongSumAggregatorFactory("count", "count"),
+                                                 )
+                                             ),
+                                             Integer.MAX_VALUE
+                                         )
+                                     )
+                                     .setAggregatorSpecs(
+                                         Lists.newArrayList(
+                                             new LongSumAggregatorFactory("count", "count"),
 //          new AtomCubeAggregatorFactory("UV", VISITOR_ID, BITMAP_TYPE),
 //          new AtomCubeAggregatorFactory("UV2", VISITOR_AtomCube, BITMAP_TYPE),
 //          new AtomCubeAggregatorFactory("UC", CLIENT_AtomCube, BITMAP_TYPE)
-            new AtomCubeAggregatorFactory("user_id", M_USER_ID, BITMAP_TYPE)
-        )
-      )
-      .build();
+                                             new AtomCubeAggregatorFactory("user_id", M_USER_ID, BITMAP_TYPE)
+                                         )
+                                     )
+                                     .build();
 
     List<Row> results = Sequences.toList(
-      new FinalizeResultsQueryRunner(
-        factory.getToolchest().mergeResults(
-          factory.mergeRunners(
-            MoreExecutors.sameThreadExecutor(),
-            ImmutableList.of(factory.createRunner(segment))
-          )
-        ),
-        factory.getToolchest()
-      ).run(query, Maps.newHashMap()),
-      Lists.newArrayList()
+        new FinalizeResultsQueryRunner(
+            factory.getToolchest().mergeResults(
+                factory.mergeRunners(
+                    MoreExecutors.sameThreadExecutor(),
+                    ImmutableList.of(factory.createRunner(segment))
+                )
+            ),
+            factory.getToolchest()
+        ).run(query, Maps.newHashMap()),
+        Lists.newArrayList()
     );
 
     List<Row> expectedResults = Arrays.<Row>asList(
-      new MapBasedRow(
-        new DateTime(0),
-        ImmutableMap.<String, Object>of(
-          M_USER_ID, "00000002",
-          "UC", 2,
-          "UV", 1,
-          "UV2", 1,
-          "count", 2L
+        new MapBasedRow(
+            new DateTime(0),
+            ImmutableMap.<String, Object>of(
+                M_USER_ID, "00000002",
+                "UC", 2,
+                "UV", 1,
+                "UV2", 1,
+                "count", 2L
+            )
+        ),
+        new MapBasedRow(
+            new DateTime(0),
+            ImmutableMap.<String, Object>of(
+                M_USER_ID, "00000000",
+                "UC", 1,
+                "UV", 1,
+                "UV2", 1,
+                "count", 1L
+            )
         )
-      ),
-      new MapBasedRow(
-        new DateTime(0),
-        ImmutableMap.<String, Object>of(
-          M_USER_ID, "00000000",
-          "UC", 1,
-          "UV", 1,
-          "UV2", 1,
-          "count", 1L
-        )
-      )
     );
     TestHelper.assertExpectedObjects(expectedResults, results, "");
   }

@@ -17,50 +17,58 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class AtomCubeRawPostAggregator implements PostAggregator {
+public class AtomCubeRawPostAggregator implements PostAggregator
+{
   private final String name;
   private final Format format;
   private final String field;
 
-  enum Format {
+  enum Format
+  {
     LIST,
     ROARINGBASE64
   }
 
   @JsonCreator
   public AtomCubeRawPostAggregator(
-    @JsonProperty("name") String name,
-    @JsonProperty("format") String format,
-    @JsonProperty("field") String field
-  ) {
+      @JsonProperty("name") String name,
+      @JsonProperty("format") String format,
+      @JsonProperty("field") String field
+  )
+  {
     this.name = Preconditions.checkNotNull(name, "name");
     this.format = format == null ? Format.LIST : Format.valueOf(format.toUpperCase());
     this.field = Preconditions.checkNotNull(field, "field");
   }
 
   @Override
-  public Set<String> getDependentFields() {
+  public Set<String> getDependentFields()
+  {
     return null;
   }
 
   @Override
-  public Comparator<RoaringBitmap> getComparator() {
+  public Comparator<RoaringBitmap> getComparator()
+  {
     return AtomCubeAggregatorFactory.COMPARATOR;
   }
 
   @Override
-  public Object compute(final Map<String, Object> combinedAggregators) {
+  public Object compute(final Map<String, Object> combinedAggregators)
+  {
     final ImmutableBitmap bitmap = (ImmutableBitmap) combinedAggregators.get(field);
 
     if (format == Format.LIST) {
       final List<Integer> retVal = Lists.newArrayList();
-      if(bitmap != null) {
-        if(bitmap instanceof WrappedImmutableRoaringBitmap) {
+      if (bitmap != null) {
+        if (bitmap instanceof WrappedImmutableRoaringBitmap) {
           org.roaringbitmap.buffer.ImmutableRoaringBitmap _bitmap =
-            ((WrappedImmutableRoaringBitmap)bitmap).getBitmap();
-          _bitmap.forEach(new IntConsumer() {
+              ((WrappedImmutableRoaringBitmap) bitmap).getBitmap();
+          _bitmap.forEach(new IntConsumer()
+          {
             @Override
-            public void accept(int value) {
+            public void accept(int value)
+            {
               retVal.add(value);
             }
           });
@@ -74,7 +82,7 @@ public class AtomCubeRawPostAggregator implements PostAggregator {
       return retVal;
     } else if (format == Format.ROARINGBASE64) {
       String retVal = "";
-      if(bitmap != null) {
+      if (bitmap != null) {
         retVal = AtomCubeSerializer.serialize(bitmap, AtomCubeAggregatorFactory.BITMAP_SERDE_FACTORY);
       }
       return retVal;
@@ -85,17 +93,20 @@ public class AtomCubeRawPostAggregator implements PostAggregator {
 
   @Override
   @JsonProperty
-  public String getName() {
+  public String getName()
+  {
     return name;
   }
 
   @JsonProperty
-  public Format getFormat() {
+  public Format getFormat()
+  {
     return format;
   }
 
   @JsonProperty
-  public String getField() {
+  public String getField()
+  {
     return field;
   }
 }

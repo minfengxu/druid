@@ -17,12 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class AtomCubeSetPostAggregator implements PostAggregator {
+public class AtomCubeSetPostAggregator implements PostAggregator
+{
   private final String name;
   private final List<String> fields;
   private final Func func;
 
-  enum Func {
+  enum Func
+  {
     UNION,
     INTERSECT,
     NOT
@@ -30,10 +32,11 @@ public class AtomCubeSetPostAggregator implements PostAggregator {
 
   @JsonCreator
   public AtomCubeSetPostAggregator(
-    @JsonProperty("name") String name,
-    @JsonProperty("func") String func,
-    @JsonProperty("fields") List<String> fields
-  ) {
+      @JsonProperty("name") String name,
+      @JsonProperty("func") String func,
+      @JsonProperty("fields") List<String> fields
+  )
+  {
     this.name = name;
     this.fields = fields;
     this.func = Func.valueOf(func.toUpperCase());
@@ -44,22 +47,25 @@ public class AtomCubeSetPostAggregator implements PostAggregator {
   }
 
   @Override
-  public Set<String> getDependentFields() {
+  public Set<String> getDependentFields()
+  {
     return null;
   }
 
   @Override
-  public Comparator<RoaringBitmap> getComparator() {
+  public Comparator<RoaringBitmap> getComparator()
+  {
     return AtomCubeAggregatorFactory.COMPARATOR;
   }
 
   @Override
-  public Object compute(final Map<String, Object> combinedAggregators) {
+  public Object compute(final Map<String, Object> combinedAggregators)
+  {
     List<ImmutableBitmap> bitmaps = Lists.newArrayList();
 
     for (int i = 0; i < fields.size(); i++) {
       ImmutableBitmap bitmap = (ImmutableBitmap) combinedAggregators.get(fields.get(i));
-      if(bitmap != null) {
+      if (bitmap != null) {
         bitmaps.add(bitmap);
       } else {
         bitmaps.add(AtomCubeAggregatorFactory.BITMAP_FACTORY.makeEmptyImmutableBitmap());
@@ -77,7 +83,7 @@ public class AtomCubeSetPostAggregator implements PostAggregator {
       sets.addAll(bitmaps);
       sets.remove(0);
       ImmutableBitmap _tmp = AtomCubeAggregatorFactory.BITMAP_FACTORY.union(sets);
-      ImmutableBitmap tmp = AtomCubeAggregatorFactory.BITMAP_FACTORY.complement(_tmp, first_length+1);
+      ImmutableBitmap tmp = AtomCubeAggregatorFactory.BITMAP_FACTORY.complement(_tmp, first_length + 1);
 //      ImmutableBitmap tmp = AtomCubeAggregatorFactory.BITMAP_FACTORY.union(
 //        Lists.transform(
 //          bitmaps,
@@ -101,39 +107,47 @@ public class AtomCubeSetPostAggregator implements PostAggregator {
 
   @Override
   @JsonProperty
-  public String getName() {
+  public String getName()
+  {
     return name;
   }
 
   @JsonProperty
-  public String getFunc() {
+  public String getFunc()
+  {
     return func.toString();
   }
 
   @JsonProperty
-  public List<String> getFields() {
+  public List<String> getFields()
+  {
     return fields;
   }
 
-  private int getMaxNumber(ImmutableBitmap bitmap) {
+  private int getMaxNumber(ImmutableBitmap bitmap)
+  {
     final int[] length = {0};
 //    int length = 0;
-    if(bitmap instanceof WrappedImmutableRoaringBitmap) {
+    if (bitmap instanceof WrappedImmutableRoaringBitmap) {
       org.roaringbitmap.buffer.ImmutableRoaringBitmap _bitmap =
-        ((WrappedImmutableRoaringBitmap)bitmap).getBitmap();
-      _bitmap.forEach(new IntConsumer() {
+          ((WrappedImmutableRoaringBitmap) bitmap).getBitmap();
+      _bitmap.forEach(new IntConsumer()
+      {
         @Override
-        public void accept(int value) {
-          if(value > length[0])
+        public void accept(int value)
+        {
+          if (value > length[0]) {
             length[0] = value;
+          }
         }
       });
     } else {
       IntIterator iter = bitmap.iterator();
       while (iter.hasNext()) {
         int _length = iter.next();
-        if (_length > length[0])
+        if (_length > length[0]) {
           length[0] = _length;
+        }
       }
     }
     return length[0];

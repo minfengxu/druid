@@ -24,10 +24,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by minfengxu on 2016/5/23 0023.
- */
-public class AtomCubeQuery extends BaseQuery<Result<AtomCubeResultValue>> {
+public class AtomCubeQuery extends BaseQuery<Result<AtomCubeResultValue>>
+{
   private final Map<String, Query> namedQueries;
   private final List<PostAggregator> postAggregators;
   private final Map<String, Cache.NamedKey> subQueryKeys;
@@ -35,11 +33,13 @@ public class AtomCubeQuery extends BaseQuery<Result<AtomCubeResultValue>> {
 
   @JsonCreator
   public AtomCubeQuery(
-    @JsonProperty("dataSource") DataSource dataSource,
-    @JsonProperty("intervals") QuerySegmentSpec querySegmentSpec,
-    @JsonProperty("queries") Map<String, Query> queries,
-    @JsonProperty("postAggregations") List<PostAggregator> postAggregations,
-    @JsonProperty("context") Map<String, Object> context) {
+      @JsonProperty("dataSource") DataSource dataSource,
+      @JsonProperty("intervals") QuerySegmentSpec querySegmentSpec,
+      @JsonProperty("queries") Map<String, Query> queries,
+      @JsonProperty("postAggregations") List<PostAggregator> postAggregations,
+      @JsonProperty("context") Map<String, Object> context
+  )
+  {
     super(dataSource, querySegmentSpec, false, context);
     this.namedQueries = queries;
     this.postAggregators = postAggregations;
@@ -48,85 +48,99 @@ public class AtomCubeQuery extends BaseQuery<Result<AtomCubeResultValue>> {
   }
 
   @JsonProperty("queries")
-  public Map<String, Query> getQueries() {
+  public Map<String, Query> getQueries()
+  {
     return namedQueries;
   }
 
   @JsonProperty("postAggregations")
-  public List<PostAggregator> getPostAggregations() {
+  public List<PostAggregator> getPostAggregations()
+  {
     return postAggregators;
   }
 
   @Override
-  public boolean hasFilters() {
+  public boolean hasFilters()
+  {
     return false;
   }
 
   @Override
-  public String getType() {
+  public String getType()
+  {
     return AtomCubeDruidModule.ATOM_CUBE;
   }
 
   @Override
-  public AtomCubeQuery withQuerySegmentSpec(QuerySegmentSpec spec) {
+  public AtomCubeQuery withQuerySegmentSpec(QuerySegmentSpec spec)
+  {
     return this;
   }
 
   @Override
-  public AtomCubeQuery withDataSource(DataSource dataSource) {
+  public AtomCubeQuery withDataSource(DataSource dataSource)
+  {
     return this;
   }
 
   @Override
-  public AtomCubeQuery withOverriddenContext(Map contextOverrides) {
+  public AtomCubeQuery withOverriddenContext(Map contextOverrides)
+  {
     return new AtomCubeQuery(
-      getDataSource(),
-      getQuerySegmentSpec(),
-      namedQueries,
-      postAggregators,
-      computeOverridenContext(contextOverrides)
+        getDataSource(),
+        getQuerySegmentSpec(),
+        namedQueries,
+        postAggregators,
+        computeOverridenContext(contextOverrides)
     );
   }
 
-  public Cache.NamedKey getKey() {
+  public Cache.NamedKey getKey()
+  {
     return this.queryKey;
   }
 
-  public Map<String, Cache.NamedKey> getSubQueryKeys() {
+  public Map<String, Cache.NamedKey> getSubQueryKeys()
+  {
     return this.subQueryKeys;
   }
 
-  private Cache.NamedKey genKey() {
+  private Cache.NamedKey genKey()
+  {
     String id = getCombinedSubQueryKey();
     Map<String, Cache.NamedKey> postKeys = Maps.newHashMap(subQueryKeys);
-    if(postAggregators != null) {
+    if (postAggregators != null) {
       for (PostAggregator _postAggregator : postAggregators) {
         genPostAggratorKey(_postAggregator, postKeys);
       }
     }
     StringBuffer sb = new StringBuffer();
-    for(Cache.NamedKey postKey : getSortedCacheKeys(postKeys) ) {
+    for (Cache.NamedKey postKey : getSortedCacheKeys(postKeys)) {
       sb.append(postKey.namespace);
     }
     String key = sb.toString();
     return new Cache.NamedKey(id, key.getBytes());
   }
 
-  private List<Cache.NamedKey> getSortedCacheKeys(Map<String, Cache.NamedKey> keys) {
+  private List<Cache.NamedKey> getSortedCacheKeys(Map<String, Cache.NamedKey> keys)
+  {
     List<Cache.NamedKey> sortedKeys = Lists.newArrayList();
-    for(Map.Entry<String, Cache.NamedKey> key : keys.entrySet()) {
+    for (Map.Entry<String, Cache.NamedKey> key : keys.entrySet()) {
       sortedKeys.add(key.getValue());
     }
-    Collections.sort(sortedKeys, new Comparator<Cache.NamedKey>() {
+    Collections.sort(sortedKeys, new Comparator<Cache.NamedKey>()
+    {
       @Override
-      public int compare(Cache.NamedKey o1, Cache.NamedKey o2) {
+      public int compare(Cache.NamedKey o1, Cache.NamedKey o2)
+      {
         return o1.namespace.compareTo(o2.namespace);
       }
     });
     return sortedKeys;
   }
 
-  private void genPostAggratorKey(PostAggregator _postAggregator, Map<String, Cache.NamedKey> postKeys) {
+  private void genPostAggratorKey(PostAggregator _postAggregator, Map<String, Cache.NamedKey> postKeys)
+  {
     String keyWord = "";
     List<String> fields = Lists.newArrayList();
     if (_postAggregator instanceof AtomCubeRawPostAggregator) {
@@ -143,7 +157,7 @@ public class AtomCubeQuery extends BaseQuery<Result<AtomCubeResultValue>> {
       keyWord = "cardinality";
     }
     StringBuffer sb = new StringBuffer(keyWord);
-    for(String field : fields ) {
+    for (String field : fields) {
       Cache.NamedKey _key = postKeys.get(field);
       sb.append(Integer.toHexString(_key.hashCode()));
     }
@@ -152,44 +166,47 @@ public class AtomCubeQuery extends BaseQuery<Result<AtomCubeResultValue>> {
     postKeys.put(_postAggregator.getName(), postKey);
   }
 
-  private Map<String, Cache.NamedKey> genSubQueryKeys() {
+  private Map<String, Cache.NamedKey> genSubQueryKeys()
+  {
     ImmutableMap.Builder<String, Cache.NamedKey> builder = ImmutableMap.builder();
-    for(Map.Entry<String, Query> query : namedQueries.entrySet()) {
+    for (Map.Entry<String, Query> query : namedQueries.entrySet()) {
       Cache.NamedKey key = getKey(query.getValue());
       builder.put(query.getKey(), key);
     }
     return builder.build();
   }
 
-  private String getCombinedSubQueryKey() {
+  private String getCombinedSubQueryKey()
+  {
     List<String> ids = Lists.newArrayList();
-    for(Map.Entry<String, Cache.NamedKey> key : subQueryKeys.entrySet()) {
+    for (Map.Entry<String, Cache.NamedKey> key : subQueryKeys.entrySet()) {
       ids.add(key.getValue().namespace);
     }
     Collections.sort(ids, Ordering.<String>natural());
     StringBuffer sb = new StringBuffer();
-    for(String s : ids) {
+    for (String s : ids) {
       sb.append(s);
     }
     return Integer.toHexString(sb.toString().hashCode());
   }
 
-  private Cache.NamedKey getKey(Query _query) {
+  private Cache.NamedKey getKey(Query _query)
+  {
     Cache.NamedKey key = null;
     StringBuffer sb = new StringBuffer();
     List<String> dsNames = _query.getDataSource().getNames();
     Collections.sort(dsNames, Ordering.natural());
-    for(String s: dsNames) {
+    for (String s : dsNames) {
       sb.append(s);
     }
     List<Interval> intervals = _query.getIntervals();
-    for(Interval interval : sortIntervals(intervals) ) {
+    for (Interval interval : sortIntervals(intervals)) {
       long start = interval.getStartMillis();
       long end = interval.getEndMillis();
       sb.append(start).append(end);
     }
     byte[] filterKey = new byte[0];
-    if(_query.hasFilters()) {
+    if (_query.hasFilters()) {
       if (_query instanceof TimeseriesQuery) {
         TimeseriesQuery query = (TimeseriesQuery) _query;
         filterKey = query.getDimensionsFilter().getCacheKey();
@@ -203,18 +220,21 @@ public class AtomCubeQuery extends BaseQuery<Result<AtomCubeResultValue>> {
       }
     }
     String queryId = Integer.toHexString(sb.toString().hashCode());
-    key = new Cache.NamedKey(queryId,
-      ByteBuffer.allocate(queryId.getBytes().length + filterKey.length)
-        .put(queryId.getBytes())
-        .put(filterKey)
-        .array());
+    key = new Cache.NamedKey(
+        queryId,
+        ByteBuffer.allocate(queryId.getBytes().length + filterKey.length)
+                  .put(queryId.getBytes())
+                  .put(filterKey)
+                  .array()
+    );
     return key;
   }
 
-  private static List<Interval> sortIntervals(List<Interval> intervals) {
+  private static List<Interval> sortIntervals(List<Interval> intervals)
+  {
     List<Interval> _intervals = Lists.newCopyOnWriteArrayList();
     List<Interval> ret = Lists.newCopyOnWriteArrayList();
-    for(Interval interval:intervals) {
+    for (Interval interval : intervals) {
       _intervals.add(interval);
     }
     while (!_intervals.isEmpty()) {

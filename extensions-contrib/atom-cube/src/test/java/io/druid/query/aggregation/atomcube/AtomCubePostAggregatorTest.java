@@ -14,10 +14,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created by minfengxu on 2016/6/22 0022.
- */
-public class AtomCubePostAggregatorTest {
+public class AtomCubePostAggregatorTest
+{
   private static final EmittingLogger log = new EmittingLogger(AtomCubePostAggregatorTest.class);
 
   public static final BitmapFactory bitmapFactory = new RoaringBitmapFactory();
@@ -31,14 +29,16 @@ public class AtomCubePostAggregatorTest {
 
   Map<String, Object> bitmaps = new HashMap<>();
 
-  private enum TYPE {
+  private enum TYPE
+  {
     SET,
     SIZE,
     RAW
   }
 
   @Before
-  public void setUp() {
+  public void setUp()
+  {
     AtomCubeAggregatorFactory.BITMAP_FACTORY = bitmapFactory;
     MutableBitmap _bitmap = bitmapFactory.makeEmptyMutableBitmap();
     _bitmap.add(0);
@@ -131,65 +131,107 @@ public class AtomCubePostAggregatorTest {
   }
 
   @Test
-  public void testSetPostAggregator_UNION() {
+  public void testSetPostAggregator_UNION()
+  {
     log.debug("--- TestUnion ---");
     String expectResult = "[0,1,3,5,7]";
-    ImmutableBitmap retBitmap = (ImmutableBitmap) genPostAggregator(TYPE.SET, AtomCubeSetPostAggregator.Func.UNION.name(), "A", "B").compute(bitmaps);
+    ImmutableBitmap retBitmap = (ImmutableBitmap) genPostAggregator(
+        TYPE.SET,
+        AtomCubeSetPostAggregator.Func.UNION.name(),
+        "A",
+        "B"
+    ).compute(bitmaps);
     String ret = printBitmap(retBitmap);
     assertEquals(expectResult, ret);
   }
 
   @Test
-  public void testSetPostAggregator_INTERSECT() {
+  public void testSetPostAggregator_INTERSECT()
+  {
     log.debug("--- TestIntersect ---");
     String expectResult = "[3,7]";
-    ImmutableBitmap retBitmap = (ImmutableBitmap) genPostAggregator(TYPE.SET, AtomCubeSetPostAggregator.Func.INTERSECT.name(), "A", "D").compute(bitmaps);
+    ImmutableBitmap retBitmap = (ImmutableBitmap) genPostAggregator(
+        TYPE.SET,
+        AtomCubeSetPostAggregator.Func.INTERSECT.name(),
+        "A",
+        "D"
+    ).compute(bitmaps);
     String ret = printBitmap(retBitmap);
     assertEquals(expectResult, ret);
   }
 
   @Test
-  public void testSetPostAggregator_NOT() {
+  public void testSetPostAggregator_NOT()
+  {
     log.debug("--- TestNot ---");
     String expectResult = "[1,3]";
-    ImmutableBitmap retBitmap = (ImmutableBitmap) genPostAggregator(TYPE.SET, AtomCubeSetPostAggregator.Func.NOT.name(), "A", "B").compute(bitmaps);
+    ImmutableBitmap retBitmap = (ImmutableBitmap) genPostAggregator(
+        TYPE.SET,
+        AtomCubeSetPostAggregator.Func.NOT.name(),
+        "A",
+        "B"
+    ).compute(bitmaps);
     String ret = printBitmap(retBitmap);
     assertEquals(expectResult, ret);
 
     log.debug("------------------");
     String expectResult1 = "[0,5]";
-    ImmutableBitmap retBitmap1 = (ImmutableBitmap) genPostAggregator(TYPE.SET, AtomCubeSetPostAggregator.Func.NOT.name(), "B", "D").compute(bitmaps);
+    ImmutableBitmap retBitmap1 = (ImmutableBitmap) genPostAggregator(
+        TYPE.SET,
+        AtomCubeSetPostAggregator.Func.NOT.name(),
+        "B",
+        "D"
+    ).compute(bitmaps);
     String ret1 = printBitmap(retBitmap1);
     assertEquals(expectResult1, ret1);
 
     log.debug("------------------");
     String expectResult2 = "[5,6,7,8]";
-    ImmutableBitmap retBitmap2 = (ImmutableBitmap) genPostAggregator(TYPE.SET, AtomCubeSetPostAggregator.Func.NOT.name(), "F", "E").compute(bitmaps);
+    ImmutableBitmap retBitmap2 = (ImmutableBitmap) genPostAggregator(
+        TYPE.SET,
+        AtomCubeSetPostAggregator.Func.NOT.name(),
+        "F",
+        "E"
+    ).compute(bitmaps);
     String ret2 = printBitmap(retBitmap2);
     assertEquals(expectResult2, ret2);
 
     log.debug("------------------");
     String expectResult3 = "[]";
-    ImmutableBitmap retBitmap3 = (ImmutableBitmap) genPostAggregator(TYPE.SET, AtomCubeSetPostAggregator.Func.NOT.name(), "E", "F").compute(bitmaps);
+    ImmutableBitmap retBitmap3 = (ImmutableBitmap) genPostAggregator(
+        TYPE.SET,
+        AtomCubeSetPostAggregator.Func.NOT.name(),
+        "E",
+        "F"
+    ).compute(bitmaps);
     String ret3 = printBitmap(retBitmap3);
     assertEquals(expectResult3, ret3);
 
     log.debug("------------------");
     String expectResult4 = "[5,6,8]";
-    ImmutableBitmap retBitmap4 = (ImmutableBitmap) genPostAggregator(TYPE.SET, AtomCubeSetPostAggregator.Func.NOT.name(), "F", "E", "G").compute(bitmaps);
+    ImmutableBitmap retBitmap4 = (ImmutableBitmap) genPostAggregator(
+        TYPE.SET,
+        AtomCubeSetPostAggregator.Func.NOT.name(),
+        "F",
+        "E",
+        "G"
+    ).compute(bitmaps);
     String ret4 = printBitmap(retBitmap4);
     assertEquals(expectResult4, ret4);
   }
 
-  private String printBitmap(ImmutableBitmap bitmap) {
+  private String printBitmap(ImmutableBitmap bitmap)
+  {
     final StringBuffer sb = new StringBuffer();
     sb.append('[');
-    if(bitmap instanceof WrappedImmutableRoaringBitmap) {
+    if (bitmap instanceof WrappedImmutableRoaringBitmap) {
       org.roaringbitmap.buffer.ImmutableRoaringBitmap _bitmap =
-        ((WrappedImmutableRoaringBitmap)bitmap).getBitmap();
-      _bitmap.forEach(new IntConsumer() {
+          ((WrappedImmutableRoaringBitmap) bitmap).getBitmap();
+      _bitmap.forEach(new IntConsumer()
+      {
         @Override
-        public void accept(int value) {
+        public void accept(int value)
+        {
           sb.append(value).append(',');
         }
       });
@@ -198,27 +240,30 @@ public class AtomCubePostAggregatorTest {
 //    while(iter.hasNext()) {
 //      sb.append(iter.next()).append(',');
 //    }
-    if(sb.lastIndexOf(",") > 0 )
+    if (sb.lastIndexOf(",") > 0) {
       sb.deleteCharAt(sb.lastIndexOf(","));
+    }
     sb.append(']');
     log.debug(sb.toString());
     return sb.toString();
   }
 
-  private PostAggregator genPostAggregator(TYPE type, String func, String ... bitmapNames) {
+  private PostAggregator genPostAggregator(TYPE type, String func, String... bitmapNames)
+  {
     PostAggregator retValue = null;
     String name = "test";
     List<String> fields = Lists.newArrayList();
-    for(int i = 0; i < bitmapNames.length;i++) {
+    for (int i = 0; i < bitmapNames.length; i++) {
       String s = bitmapNames[i];
       fields.add(s);
       printBitmap((ImmutableBitmap) bitmaps.get(s));
-      if(i < bitmapNames.length - 1)
+      if (i < bitmapNames.length - 1) {
         log.debug(func);
-      else
+      } else {
         log.debug("=");
+      }
     }
-    if(type == TYPE.SET) {
+    if (type == TYPE.SET) {
       retValue = new AtomCubeSetPostAggregator(name, func, fields);
     }
     return retValue;

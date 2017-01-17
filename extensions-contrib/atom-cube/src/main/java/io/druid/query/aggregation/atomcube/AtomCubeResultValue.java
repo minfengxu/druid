@@ -12,30 +12,29 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by minfengxu on 2016/5/30 0030.
- */
-public class AtomCubeResultValue implements Iterable<DimensionAndMetricValueExtractor>, Serializable {
+public class AtomCubeResultValue implements Iterable<DimensionAndMetricValueExtractor>, Serializable
+{
 
   private final List<DimensionAndMetricValueExtractor> value;
 
-  public AtomCubeResultValue(List<?> value) {
+  public AtomCubeResultValue(List<?> value)
+  {
     this.value = (value == null) ? Lists.<DimensionAndMetricValueExtractor>newArrayList() : Lists.transform(
-      value,
-      new Function<Object, DimensionAndMetricValueExtractor>()
-      {
-        @Override
-        public DimensionAndMetricValueExtractor apply(@Nullable Object input)
+        value,
+        new Function<Object, DimensionAndMetricValueExtractor>()
         {
-          if (input instanceof Map) {
-            return new DimensionAndMetricValueExtractor((Map) input);
-          } else if (input instanceof DimensionAndMetricValueExtractor) {
-            return (DimensionAndMetricValueExtractor) input;
-          } else {
-            throw new IAE("Unknown type for input[%s]", input.getClass());
+          @Override
+          public DimensionAndMetricValueExtractor apply(@Nullable Object input)
+          {
+            if (input instanceof Map) {
+              return new DimensionAndMetricValueExtractor((Map) input);
+            } else if (input instanceof DimensionAndMetricValueExtractor) {
+              return (DimensionAndMetricValueExtractor) input;
+            } else {
+              throw new IAE("Unknown type for input[%s]", input.getClass());
+            }
           }
         }
-      }
     );
   }
 
@@ -55,8 +54,8 @@ public class AtomCubeResultValue implements Iterable<DimensionAndMetricValueExtr
   public String toString()
   {
     return "AtomCubeResultValue{" +
-      "value=" + value +
-      '}';
+           "value=" + value +
+           '}';
   }
 
   @Override
